@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ultimate Performer — Meal Plan Generator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Montserrat:wght@400;500;600;700&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --cream:#f0eee7;
+  --steel:#4682b4;
+  --steel-dark:#2d5a8e;
+  --steel-light:rgba(70,130,180,0.1);
+  --dark:#1a1a1a;
+  --mid:#555;
+  --light:#888;
+  --border:#d8d5ce;
+  --white:#ffffff;
+}
+
+html,body{background:var(--cream);font-family:'Montserrat',sans-serif;color:var(--dark);min-height:100vh;overflow-x:hidden}
+.wrap{max-width:720px;margin:0 auto;padding:40px 24px 80px}
+
+.hdr{text-align:center;margin-bottom:48px}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--steel);margin-bottom:12px}
+.hdr h1{font-family:'DM Serif Display',serif;font-size:clamp(26px,5vw,38px);line-height:1.15;margin-bottom:12px}
+.hdr p{font-size:14px;color:var(--mid);line-height:1.6;max-width:460px;margin:0 auto}
+
+.step-label{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--steel);margin-bottom:14px}
+.step-block{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:28px;margin-bottom:16px}
+.step-q{font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:18px;color:var(--dark)}
+
+.opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.opt-btn{background:transparent;border:1.5px solid var(--border);border-radius:3px;padding:14px 12px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:600;color:var(--dark);cursor:pointer;transition:all .15s ease;text-align:center;line-height:1.3}
+.opt-btn:hover{border-color:var(--steel);color:var(--steel);background:var(--steel-light)}
+.opt-btn.sel{border-color:var(--steel);background:var(--steel);color:var(--white)}
+
+.btn-generate{width:100%;padding:16px;background:var(--dark);color:var(--white);border:none;border-radius:3px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:background .15s ease;margin-top:8px}
+.btn-generate:hover{background:#333}
+.btn-generate:disabled{background:var(--border);color:var(--light);cursor:not-allowed}
+
+/* PLAN SCREEN */
+.plan-screen{display:none}
+.plan-screen.active{display:block;animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+.plan-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.meta-tag{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:var(--steel-light);color:var(--steel);padding:5px 12px;border-radius:2px}
+
+.macro-bar{background:var(--dark);color:var(--white);border-radius:4px;padding:20px 24px;margin-bottom:24px;display:flex;gap:24px;flex-wrap:wrap;align-items:center}
+.macro-item{text-align:center}
+.macro-val{font-family:'DM Serif Display',serif;font-size:28px;color:var(--white)}
+.macro-lbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-top:2px}
+
+
+
+/* DAY TABS */
+.day-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.day-tab{padding:9px 18px;background:transparent;border:1.5px solid var(--border);border-radius:3px;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--light);cursor:pointer;transition:all .15s ease}
+.day-tab:hover{border-color:var(--steel);color:var(--steel)}
+.day-tab.active{border-color:var(--steel);background:var(--steel);color:var(--white)}
+
+.day-plan{display:none}
+.day-plan.active{display:block;animation:fadeUp .25s ease}
+
+/* MEAL CARD */
+.meal-card{background:var(--white);border:1px solid var(--border);border-radius:4px;margin-bottom:12px;overflow:hidden}
+.meal-hdr{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.meal-type{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--steel)}
+.meal-cals{font-size:12px;font-weight:700;color:var(--light)}
+.meal-body{padding:16px 20px}
+.meal-name{font-family:'DM Serif Display',serif;font-size:18px;color:var(--dark);margin-bottom:8px}
+.meal-macros{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap}
+.meal-macro{font-size:11px;font-weight:700;color:var(--light);letter-spacing:.04em}
+.meal-macro span{color:var(--dark)}
+.ingredients{list-style:none;margin-bottom:12px}
+.ingredients li{font-size:13px;color:var(--mid);padding:3px 0;border-bottom:1px solid #f5f3ee;line-height:1.5}
+.ingredients li:last-child{border-bottom:none}
+.ingredients li strong{color:var(--dark);font-weight:600}
+.cook-note{font-size:13px;color:var(--mid);background:#f7f6f2;padding:10px 14px;border-radius:3px;margin-top:10px;line-height:1.6}
+.cook-note .cook-heading{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--steel);margin-bottom:4px}
+
+.reset-row{margin-top:32px;text-align:center}
+.btn-reset{background:transparent;border:1.5px solid var(--border);color:var(--light);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:11px 24px;border-radius:3px;cursor:pointer;transition:all .15s ease}
+.btn-reset:hover{border-color:var(--dark);color:var(--dark)}
+
+@media(max-width:480px){
+  .wrap{padding:24px 16px 60px}
+  .opt-grid{grid-template-columns:1fr 1fr}
+  .step-block{padding:20px}
+  .macro-bar{gap:16px}
+  .macro-val{font-size:22px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- SELECTOR -->
+<div id="selectorScreen">
+  <div class="hdr">
+    <div class="eyebrow">The Ultimate Performer</div>
+    <h1>Your 5-Day<br><em>Meal Plan</em></h1>
+    <p>Pick your calorie target and dietary preference — your personalised plan is ready instantly.</p>
+  </div>
+
+  <div class="step-block">
+    <div class="step-label">Step 1 of 2</div>
+    <div class="step-q">What's your daily calorie target?</div>
+    <div class="opt-grid">
+      <button class="opt-btn" data-group="cals" data-val="1400" onclick="pick(this)">1400 kcal</button>
+      <button class="opt-btn" data-group="cals" data-val="1600" onclick="pick(this)">1600 kcal</button>
+      <button class="opt-btn" data-group="cals" data-val="1800" onclick="pick(this)">1800 kcal</button>
+      <button class="opt-btn" data-group="cals" data-val="2000" onclick="pick(this)">2000 kcal</button>
+      <button class="opt-btn" data-group="cals" data-val="2200" onclick="pick(this)">2200 kcal</button>
+      <button class="opt-btn" data-group="cals" data-val="2400" onclick="pick(this)">2400 kcal</button>
+      <button class="opt-btn" data-group="cals" data-val="2600" onclick="pick(this)">2600 kcal</button>
+    </div>
+  </div>
+
+  <div class="step-block">
+    <div class="step-label">Step 2 of 2</div>
+    <div class="step-q">Dietary preference?</div>
+    <div class="opt-grid">
+      <button class="opt-btn" data-group="diet" data-val="meat" onclick="pick(this)">🥩 Meat & Fish</button>
+      <button class="opt-btn" data-group="diet" data-val="veggie" onclick="pick(this)">🥦 Vegetarian</button>
+    </div>
+  </div>
+
+  <button class="btn-generate" id="generateBtn" disabled onclick="generatePlan()">Build My Meal Plan →</button>
+</div>
+
+<!-- PLAN -->
+<div class="plan-screen" id="planScreen">
+  <div class="hdr">
+    <div class="eyebrow">Your Meal Plan</div>
+    <h1>5-Day Plan Ready</h1>
+    <p id="planSubtitle"></p>
+  </div>
+  <div class="plan-meta" id="planMeta"></div>
+  <div class="macro-bar" id="macroBars"></div>
+
+
+
+  <div class="day-tabs" id="dayTabs"></div>
+  <div id="dayPlans"></div>
+  <div class="reset-row"><button class="btn-reset" onclick="resetPlan()">← Change My Inputs</button></div>
+</div>
+
+</div>
+
+<script>
+const sel = {cals: null, diet: null};
+
+function pick(btn) {
+  const g = btn.dataset.group;
+  document.querySelectorAll(`.opt-btn[data-group="${g}"]`).forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  sel[g] = btn.dataset.val;
+  document.getElementById('generateBtn').disabled = !(sel.cals && sel.diet);
+}
+
+
+
+// ─── MEAL DATA ───────────────────────────────────────────────────
+// Format: {name, cals, p, c, f, ingredients:[{item, amount}], af:'air fryer note', std:'standard note'}
+// p=protein(g) c=carbs(g) f=fat(g)
+
+const PLANS = {
+
+// ═══════════════════════════════════════
+// MEAT — 1400 kcal
+// ═══════════════════════════════════════
+meat_1400: [
+  { // Day 1
+    breakfast:{name:'Scrambled Eggs & Smoked Salmon',cals:350,p:32,c:18,f:16,
+      ingredients:[{item:'Eggs (whole)',amount:'3 large'},{item:'Smoked salmon',amount:'50g'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Spinach',amount:'handful'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Heat a non-stick pan over medium-low heat and add the olive oil. Crack the eggs into a bowl, season with salt and pepper, and whisk briefly. Pour into the pan and stir slowly with a spatula, pulling the eggs from the edges inward. Remove from the heat while still slightly soft — they carry on cooking. Toast the bread. Lay the smoked salmon on the toast, pile the scrambled eggs on top, and add the spinach on the side (wilt it in the same pan for 30 seconds if you prefer it warm).'},
+    lunch:{name:'Chicken & Quinoa Bowl',cals:380,p:38,c:32,f:9,
+      ingredients:[{item:'Chicken breast',amount:'130g'},{item:'Quinoa (cooked)',amount:'100g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Cucumber',amount:'50g'},{item:'Lemon juice',amount:'1 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Season the chicken breast with salt, pepper and a pinch of paprika. Heat a griddle or frying pan over medium-high heat with a little oil. Cook the chicken 5-6 minutes per side until golden and cooked through — no pink inside. Rest for 2 minutes then slice. Meanwhile cook quinoa per packet instructions (usually 15 mins in double the water, then drain). Chop the tomatoes and cucumber, toss everything together with lemon juice and olive oil. Lay the chicken slices on top. Air fryer option: 190°C for 12 mins, flipping halfway.'},
+    dinner:{name:'Baked Cod with Roasted Veg',cals:370,p:38,c:28,f:10,
+      ingredients:[{item:'Cod fillet',amount:'160g'},{item:'Sweet potato',amount:'100g'},{item:'Broccoli',amount:'100g'},{item:'Olive oil',amount:'1 tsp'},{item:'Garlic',amount:'2 cloves'},{item:'Paprika',amount:'1 tsp'}],
+      method:'Preheat oven to 200°C. Dice the sweet potato into 2cm cubes and toss with olive oil, paprika, salt and minced garlic. Spread on a baking tray and roast for 20 minutes. Add the broccoli florets to the tray, toss briefly in the oil, and roast for another 10 minutes. Meanwhile season the cod with salt, pepper and a squeeze of lemon. Place on a separate tray lined with foil and bake for 12-15 minutes until the fish flakes easily with a fork. Air fryer option: veg at 200°C for 10 mins, add cod for 8 mins.'},
+    snack:{name:'Greek Yoghurt & Almonds',cals:200,p:14,c:12,f:10,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'150g'},{item:'Almonds',amount:'15g'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  { // Day 2
+    breakfast:{name:'Turkey & Egg White Omelette',cals:330,p:36,c:14,f:12,
+      ingredients:[{item:'Egg whites',amount:'5'},{item:'Turkey breast slices',amount:'60g'},{item:'Bell pepper',amount:'50g'},{item:'Spinach',amount:'40g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Dice the pepper and roughly chop the turkey. Heat olive oil in a non-stick pan over medium heat. Add the pepper and cook for 2 minutes until slightly softened. Add the spinach and stir for 30 seconds until wilted. Season the egg whites with salt and pepper, pour over the veg and turkey. Let it set on the bottom for 2-3 minutes without stirring. When the edges are set and the middle is nearly done, fold in half and slide onto a plate.'},
+    lunch:{name:'Tuna & Brown Rice Bowl',cals:390,p:40,c:34,f:8,
+      ingredients:[{item:'Tuna in spring water',amount:'160g tin'},{item:'Brown rice (cooked)',amount:'100g'},{item:'Edamame',amount:'50g'},{item:'Cucumber',amount:'60g'},{item:'Soy sauce',amount:'1 tbsp'},{item:'Sesame oil',amount:'1 tsp'}],
+      method:'No cooking needed. Cook rice ahead of time or use a microwave pouch. Drain the tuna and break it up with a fork. Dice the cucumber. If edamame is frozen, microwave for 2 minutes. Combine everything in a bowl, drizzle with soy sauce and sesame oil, and mix well.'},
+    dinner:{name:'Lean Beef Stir-Fry',cals:390,p:38,c:30,f:11,
+      ingredients:[{item:'Lean beef mince (5% fat)',amount:'130g'},{item:'Rice noodles (cooked)',amount:'80g'},{item:'Courgette',amount:'80g'},{item:'Tenderstem broccoli',amount:'60g'},{item:'Soy sauce',amount:'1 tbsp'},{item:'Ginger',amount:'1 tsp'},{item:'Sesame oil',amount:'1 tsp'}],
+      method:'Cook noodles per packet instructions, drain and set aside. Heat a wok or large pan over high heat until smoking. Add a splash of oil, then the beef mince. Break it up with a spatula and cook for 4-5 minutes until browned. Push to one side, add the courgette and broccoli, stir-fry for 2-3 minutes. Add the ginger, pour in the soy sauce and sesame oil, toss everything together for 1 minute. Add the noodles and toss again until everything is coated and hot.'},
+    snack:{name:'Cottage Cheese & Rice Cakes',cals:190,p:18,c:20,f:3,
+      ingredients:[{item:'Cottage cheese',amount:'150g'},{item:'Rice cakes',amount:'2'},{item:'Cucumber slices',amount:'50g'}],
+      method:'No cooking needed.'}
+  },
+  { // Day 3
+    breakfast:{name:'Overnight Oats',cals:340,p:30,c:36,f:7,
+      ingredients:[{item:'Rolled oats',amount:'60g'},{item:'Greek yoghurt (0%)',amount:'100g'},{item:'Milk (semi-skimmed)',amount:'80ml'},{item:'Blueberries',amount:'50g'},{item:'Protein powder (optional)',amount:'1 scoop'}],
+      method:'The night before: add oats, yoghurt and milk to a jar or container. Stir in protein powder if using. Mix well, cover and refrigerate overnight. In the morning, give it a stir — add a splash more milk if it\'s too thick. Top with blueberries and serve cold.'},
+    lunch:{name:'Grilled Chicken Wrap',cals:380,p:38,c:32,f:9,
+      ingredients:[{item:'Chicken breast',amount:'130g'},{item:'Wholegrain wrap',amount:'1 medium'},{item:'Romaine lettuce',amount:'40g'},{item:'Tomato',amount:'60g'},{item:'Low-fat hummus',amount:'30g'},{item:'Lemon juice',amount:'1 tsp'}],
+      method:'Season the chicken with salt, pepper and a pinch of cumin. Heat a griddle pan over medium-high heat, brush with a little oil. Cook the chicken 5-6 minutes per side until cooked through and slightly charred. Rest for 2 minutes then slice into strips. Warm the wrap briefly in a dry pan or microwave for 20 seconds. Spread hummus down the middle, layer on the lettuce, tomato and chicken slices. Squeeze over lemon juice, fold the sides in and roll tightly. Air fryer option: 190°C for 12 mins.'},
+    dinner:{name:'Salmon & Asparagus',cals:380,p:36,c:20,f:16,
+      ingredients:[{item:'Salmon fillet',amount:'150g'},{item:'Asparagus',amount:'100g'},{item:'New potatoes',amount:'100g'},{item:'Lemon',amount:'half'},{item:'Olive oil',amount:'1 tsp'},{item:'Dill',amount:'pinch'}],
+      method:'Preheat oven to 200°C. Halve the potatoes and boil in salted water for 15 minutes until tender. Place the salmon skin-side down on a foil-lined tray, drizzle with olive oil, season with salt, pepper and dill. Bake for 12-14 minutes until the fish flakes easily. Meanwhile toss the asparagus in olive oil and a pinch of salt. After the salmon has been in for 5 minutes, add the asparagus to the tray. Squeeze lemon over everything before serving. Air fryer option: salmon at 200°C for 9 mins, asparagus at 190°C for 6 mins separately.'},
+    snack:{name:'Hard Boiled Eggs',cals:200,p:16,c:2,f:11,
+      ingredients:[{item:'Eggs (hard boiled)',amount:'2 large'},{item:'Cherry tomatoes',amount:'80g'},{item:'Salt & pepper',amount:'to taste'}],
+      method:'Bring a pan of water to the boil. Gently lower the eggs in with a spoon and cook for exactly 10 minutes. Transfer to a bowl of cold water and leave for 5 minutes before peeling.'}
+  },
+  { // Day 4
+    breakfast:{name:'Smoked Mackerel & Eggs',cals:360,p:34,c:16,f:17,
+      ingredients:[{item:'Eggs (poached)',amount:'2 large'},{item:'Smoked mackerel',amount:'70g'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Spinach',amount:'40g'}],
+      method:'Fill a small pan with water, add a splash of white vinegar, and bring to a gentle simmer. Crack each egg into a small cup first. Stir the water to create a gentle swirl, then slide the eggs in one at a time. Poach for 3-4 minutes until the whites are set but yolks are still soft. Lift out with a slotted spoon and drain on kitchen paper. Toast the bread. Wilt the spinach in a dry pan for 30 seconds. Layer toast, spinach, mackerel and eggs on the plate.'},
+    lunch:{name:'Turkey Meatball & Tomato Bowl',cals:370,p:40,c:28,f:9,
+      ingredients:[{item:'Turkey mince',amount:'130g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Brown rice (cooked)',amount:'80g'},{item:'Onion',amount:'half'},{item:'Garlic',amount:'2 cloves'},{item:'Italian herbs',amount:'1 tsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Mix the turkey mince with a pinch of salt, pepper and herbs, then roll into 6-8 small balls. Heat oil in a pan over medium heat and cook the meatballs for 8-10 minutes, turning occasionally until browned all over. Remove and set aside. In the same pan, fry the diced onion for 3 minutes until soft, add minced garlic for 1 minute. Pour in the tinned tomatoes, season, bring to a simmer. Return the meatballs to the sauce, cover and cook for 10 minutes. Serve over cooked rice. Air fryer option: roll into balls, air fry at 190°C for 10 mins, then add to tomato sauce.'},
+    dinner:{name:'Prawn & Courgette Pasta',cals:370,p:36,c:32,f:8,
+      ingredients:[{item:'King prawns',amount:'150g'},{item:'Wholewheat pasta (cooked)',amount:'80g'},{item:'Courgette',amount:'100g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Garlic',amount:'2 cloves'},{item:'Olive oil',amount:'1 tsp'},{item:'Chilli flakes',amount:'pinch'}],
+      method:'Cook pasta per packet instructions, drain and set aside. Slice the courgette into half-moons and halve the cherry tomatoes. Heat olive oil in a pan over medium-high heat. Add the garlic and chilli, cook for 30 seconds until fragrant. Add the courgette and tomatoes, stir-fry for 3-4 minutes. Add the prawns and cook for 2-3 minutes, stirring, until they turn pink and curl. Toss in the pasta and mix everything together over the heat for 1 minute. Season with salt and pepper. Air fryer option: toss prawns in oil and seasoning, air fry at 200°C for 5-6 mins, then combine with veg and pasta.'},
+    snack:{name:'Protein Yoghurt',cals:200,p:20,c:18,f:4,
+      ingredients:[{item:'Skyr or high-protein yoghurt',amount:'175g'},{item:'Strawberries',amount:'80g'},{item:'Flaxseeds',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  { // Day 5
+    breakfast:{name:'Chicken & Veggie Scramble',cals:340,p:36,c:16,f:13,
+      ingredients:[{item:'Eggs (whole)',amount:'2'},{item:'Egg whites',amount:'2'},{item:'Cooked chicken breast',amount:'60g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Spinach',amount:'40g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Shred or dice the leftover chicken. Whisk the whole eggs and egg whites together with salt and pepper. Heat olive oil in a non-stick pan over medium heat. Add the tomatoes and cook for 1 minute until they start to blister. Add the chicken to warm through for 1 minute. Add the spinach and stir until wilted, about 30 seconds. Pour in the egg mixture and stir gently until just set. Remove from the heat while still slightly soft.'},
+    lunch:{name:'Mackerel & Sweet Potato',cals:390,p:34,c:36,f:12,
+      ingredients:[{item:'Tinned mackerel in brine',amount:'120g'},{item:'Sweet potato (baked)',amount:'150g'},{item:'Mixed salad leaves',amount:'50g'},{item:'Lemon juice',amount:'1 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Preheat oven to 200°C. Pierce the sweet potato all over with a fork and bake whole for 40-45 minutes until tender all the way through. Alternatively cut into cubes and roast at 200°C for 25 minutes. Air fryer option: cubes at 200°C for 15 mins. Drain and flake the mackerel. Split the sweet potato open or pile the cubes onto a plate with the salad leaves and mackerel. Dress with lemon juice and olive oil.'},
+    dinner:{name:'Chicken Thigh Tray Bake',cals:390,p:40,c:26,f:13,
+      ingredients:[{item:'Chicken thighs (skinless)',amount:'160g'},{item:'Peppers',amount:'100g'},{item:'Red onion',amount:'60g'},{item:'Cherry tomatoes',amount:'60g'},{item:'New potatoes',amount:'80g'},{item:'Olive oil',amount:'1 tsp'},{item:'Paprika & garlic',amount:'1 tsp each'}],
+      method:'Preheat oven to 200°C. Halve the potatoes and slice the peppers and red onion into chunks. Toss all the veg and potatoes in olive oil, paprika, garlic powder, salt and pepper. Spread on a large baking tray. Season the chicken thighs and nestle them on top of the veg. Roast for 30-35 minutes until the chicken is golden and the juices run clear when pierced. Air fryer option: 190°C for 20 mins, shaking basket halfway.'},
+    snack:{name:'Tuna Rice Cake',cals:190,p:20,c:18,f:3,
+      ingredients:[{item:'Tuna in spring water',amount:'80g'},{item:'Rice cakes',amount:'2'},{item:'Lemon juice',amount:'1 tsp'},{item:'Black pepper',amount:'to taste'}],
+      method:'No cooking needed.'}
+  }
+],
+
+// ═══════════════════════════════════════
+// MEAT — 1600 kcal
+// ═══════════════════════════════════════
+meat_1600: [
+  {
+    breakfast:{name:'Smoked Salmon Egg Muffins',cals:400,p:36,c:22,f:17,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Egg whites',amount:'2'},{item:'Smoked salmon',amount:'60g'},{item:'Spinach',amount:'40g'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Preheat oven to 180°C. Whisk together the eggs and egg whites, season well. Lightly oil a muffin tin. Divide the chopped spinach and salmon between 4-5 cups, pour the egg mixture over the top. Bake for 15 minutes until puffed and golden. Air fryer option: pour into silicone muffin cups, air fry at 160°C for 10-12 mins. Toast the bread and serve alongside.'},
+    lunch:{name:'Chicken, Rice & Roasted Veg',cals:440,p:42,c:40,f:10,
+      ingredients:[{item:'Chicken breast',amount:'150g'},{item:'Brown rice (cooked)',amount:'120g'},{item:'Broccoli',amount:'80g'},{item:'Bell pepper',amount:'80g'},{item:'Olive oil',amount:'1 tsp'},{item:'Soy sauce',amount:'1 tbsp'}],
+      method:'Cook rice per packet instructions. Season the chicken with salt, pepper and a pinch of garlic powder. Heat a frying pan over medium-high heat with oil. Cook the chicken 5-6 minutes per side until cooked through, then rest and slice. Toss the broccoli and pepper in olive oil and a pinch of salt. Roast at 200°C for 20 minutes or air fry at 200°C for 8-10 minutes. Assemble the bowl with rice, veg and chicken. Drizzle with soy sauce.'},
+    dinner:{name:'Salmon, Potato & Greens',cals:440,p:38,c:34,f:16,
+      ingredients:[{item:'Salmon fillet',amount:'160g'},{item:'New potatoes',amount:'130g'},{item:'Green beans',amount:'80g'},{item:'Tenderstem broccoli',amount:'60g'},{item:'Olive oil',amount:'1 tsp'},{item:'Lemon & dill',amount:'to taste'}],
+      method:'Halve the potatoes and boil in salted water for 15-18 minutes until tender. Steam or boil the green beans and broccoli for 4-5 minutes until just tender. Season the salmon well. Heat oil in an oven-proof pan over medium-high heat, place salmon skin-side down and cook 3 minutes until the skin is crisp. Flip and finish in the oven at 200°C for 6 minutes. Air fryer option: 200°C for 9 mins. Plate everything up and squeeze lemon over the salmon, sprinkle with dill.'},
+    snack:{name:'Cottage Cheese, Fruit & Nuts',cals:240,p:20,c:20,f:8,
+      ingredients:[{item:'Cottage cheese',amount:'180g'},{item:'Berries',amount:'80g'},{item:'Walnuts',amount:'10g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'High Protein Porridge',cals:400,p:34,c:38,f:10,
+      ingredients:[{item:'Rolled oats',amount:'70g'},{item:'Milk (semi-skimmed)',amount:'200ml'},{item:'Greek yoghurt',amount:'80g'},{item:'Turkey breast (cooked, sliced)',amount:'60g'},{item:'Banana',amount:'half'}],
+      method:'Add oats and milk to a saucepan over medium heat. Stir frequently for 4-5 minutes until the oats have absorbed the milk and thickened to your liking. Add a splash more milk if needed. Remove from heat and stir in the Greek yoghurt — this adds protein and makes it creamy. Serve with the sliced banana on top and the turkey slices on the side.'},
+    lunch:{name:'Beef & Quinoa Power Bowl',cals:450,p:42,c:38,f:12,
+      ingredients:[{item:'Lean beef mince (5%)',amount:'140g'},{item:'Quinoa (cooked)',amount:'110g'},{item:'Avocado',amount:'40g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Lime juice',amount:'1 tbsp'}],
+      method:'Cook quinoa per packet instructions. Heat a pan over high heat, add the mince and break it up with a spatula. Cook for 6-8 minutes until well browned, season with salt, pepper and cumin. Air fryer option: place mince in a foil parcel, air fry at 200°C for 10 mins. Slice the avocado and halve the tomatoes. Build the bowl — quinoa first, then mince, then salad ingredients. Squeeze lime juice over the top.'},
+    dinner:{name:'Prawn Stir-Fry with Noodles',cals:440,p:38,c:38,f:11,
+      ingredients:[{item:'King prawns',amount:'180g'},{item:'Rice noodles (cooked)',amount:'100g'},{item:'Pak choi',amount:'80g'},{item:'Mushrooms',amount:'60g'},{item:'Soy sauce',amount:'1.5 tbsp'},{item:'Sesame oil',amount:'1 tsp'},{item:'Ginger & garlic',amount:'1 tsp each'}],
+      method:'Soak noodles in boiling water for 5 minutes, drain and set aside. Heat a wok over high heat until smoking. Add a splash of oil, then the mushrooms and pak choi. Stir-fry for 2-3 minutes until starting to soften. Add the ginger and garlic, stir for 30 seconds. Add the prawns and stir-fry for 2-3 minutes until they turn pink. Pour in the soy sauce and sesame oil, add the noodles and toss everything together for 1 minute until combined and hot. Air fryer option: toss prawns in seasoning, air fry at 200°C for 5-6 mins, then toss with stir-fried veg and noodles.'},
+    snack:{name:'Greek Yoghurt & Seeds',cals:230,p:18,c:16,f:9,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'200g'},{item:'Mixed seeds',amount:'15g'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Tuna & Egg Scramble on Toast',cals:390,p:38,c:26,f:13,
+      ingredients:[{item:'Eggs',amount:'2'},{item:'Egg whites',amount:'3'},{item:'Tuna in spring water',amount:'80g'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Spinach',amount:'40g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Drain the tuna well and break it up with a fork. Whisk together the eggs and egg whites, season. Heat olive oil in a non-stick pan over medium-low heat. Add the spinach and stir until wilted, about 30 seconds. Add the tuna to warm through for 1 minute, then pour in the eggs. Stir gently and slowly, pulling from the edges to the centre, until just set. Pile onto toast immediately.'},
+    lunch:{name:'Chicken Caesar Wrap',cals:450,p:42,c:36,f:12,
+      ingredients:[{item:'Chicken breast',amount:'150g'},{item:'Wholegrain wrap',amount:'1 large'},{item:'Romaine lettuce',amount:'50g'},{item:'Parmesan (grated)',amount:'15g'},{item:'Light Caesar dressing',amount:'20g'},{item:'Lemon juice',amount:'1 tsp'}],
+      method:'Season the chicken and cook on a griddle pan over medium-high heat, 5-6 minutes per side until golden. Air fryer option: 190°C for 12 mins. Rest for 2 minutes then slice thinly. Warm the wrap in a dry pan for 20 seconds. Spread the Caesar dressing across the middle of the wrap. Layer on the lettuce, chicken slices and parmesan. Squeeze over lemon juice. Fold in the sides and roll tightly.'},
+    dinner:{name:'Cod, Sweet Potato & Spinach',cals:440,p:40,c:38,f:10,
+      ingredients:[{item:'Cod fillet',amount:'180g'},{item:'Sweet potato',amount:'130g'},{item:'Spinach',amount:'80g'},{item:'Garlic',amount:'2 cloves'},{item:'Olive oil',amount:'1 tsp'},{item:'Paprika',amount:'1 tsp'}],
+      method:'Preheat oven to 200°C. Dice sweet potato into 2cm cubes, toss with olive oil, paprika, salt and minced garlic. Roast for 25 minutes until golden and tender. Air fryer option: 200°C for 15 mins. Season the cod with salt, pepper and a little paprika. Place on a foil-lined tray and bake for 12-15 minutes until it flakes easily. Air fryer option: 200°C for 8 mins. While the cod rests, wilt the spinach in a dry pan over medium heat for 1 minute with a pinch of garlic salt. Plate up everything together.'},
+    snack:{name:'Hard Boiled Eggs & Fruit',cals:230,p:16,c:20,f:9,
+      ingredients:[{item:'Eggs (hard boiled)',amount:'2'},{item:'Apple',amount:'1 medium'},{item:'Almonds',amount:'10g'}],
+      method:'Boil eggs for 10 minutes, cool in cold water before peeling.'}
+  },
+  {
+    breakfast:{name:'Smoked Mackerel Scramble',cals:400,p:36,c:22,f:18,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Smoked mackerel',amount:'70g'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Cherry tomatoes',amount:'60g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Flake the mackerel into chunks, removing any bones. Halve the cherry tomatoes. Whisk the eggs with salt and pepper. Heat olive oil in a non-stick pan over medium-low heat. Add the tomatoes and cook for 1 minute. Pour in the eggs and stir gently until almost set. Remove from the heat and fold in the mackerel — the residual heat will warm it through without drying it out. Serve immediately on toast.'},
+    lunch:{name:'Turkey & Lentil Soup',cals:430,p:40,c:38,f:9,
+      ingredients:[{item:'Turkey breast (diced)',amount:'140g'},{item:'Red lentils (dried)',amount:'60g'},{item:'Carrot',amount:'60g'},{item:'Celery',amount:'40g'},{item:'Tinned tomatoes',amount:'150g'},{item:'Chicken stock',amount:'400ml'},{item:'Cumin & coriander',amount:'1 tsp each'}],
+      method:'Dice the turkey, carrot and celery. Heat a little oil in a saucepan over medium heat. Add the carrot and celery and cook for 3 minutes until beginning to soften. Add the turkey and brown lightly for 2-3 minutes. Stir in the cumin and coriander, cook for 30 seconds. Add the lentils, tinned tomatoes and stock. Bring to a boil, then reduce heat and simmer for 25-30 minutes, stirring occasionally, until the lentils are completely soft and the soup has thickened. Season to taste.'},
+    dinner:{name:'Lean Beef Burger Bowl',cals:440,p:42,c:34,f:13,
+      ingredients:[{item:'Lean beef mince (5%)',amount:'150g'},{item:'Brown rice (cooked)',amount:'100g'},{item:'Lettuce',amount:'40g'},{item:'Tomato',amount:'60g'},{item:'Onion (caramelised)',amount:'40g'},{item:'Olive oil',amount:'1 tsp'},{item:'Mustard',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. For the caramelised onion: slice the onion thinly, cook in a little oil over low heat for 15-20 minutes, stirring occasionally, until golden and sweet. Season the mince with salt and pepper and form into a patty. Cook in a pan over medium-high heat, 4-5 minutes per side until cooked through. Air fryer option: 200°C for 10-12 mins. Break the burger up over the rice and top with lettuce, sliced tomato, caramelised onion and a smear of mustard.'},
+    snack:{name:'Protein Smoothie',cals:240,p:24,c:22,f:5,
+      ingredients:[{item:'Whey protein',amount:'1 scoop'},{item:'Banana',amount:'half'},{item:'Milk (semi-skimmed)',amount:'200ml'},{item:'Peanut butter',amount:'1 tsp'}],
+      method:'Add all ingredients to a blender. Blend on high for 30-45 seconds until smooth. Drink immediately.'}
+  },
+  {
+    breakfast:{name:'Chicken & Veggie Omelette',cals:390,p:38,c:18,f:18,
+      ingredients:[{item:'Eggs',amount:'2'},{item:'Egg whites',amount:'3'},{item:'Cooked chicken breast',amount:'70g'},{item:'Mushrooms',amount:'60g'},{item:'Spinach',amount:'40g'},{item:'Feta cheese',amount:'20g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Slice the mushrooms and shred the chicken. Whisk eggs and egg whites together, season well. Heat olive oil in a non-stick pan over medium heat. Cook the mushrooms for 3 minutes until golden. Add the spinach and stir until wilted. Add the chicken to warm through for 1 minute. Pour the egg mixture over everything and leave to set on the bottom for 2-3 minutes. Crumble feta over one half. When the edges are set, fold in half and slide onto a plate. Air fryer option: pour into an oven-safe dish, air fry at 170°C for 8-10 mins.'},
+    lunch:{name:'Tuna Nicoise Salad',cals:440,p:40,c:32,f:14,
+      ingredients:[{item:'Tuna in spring water',amount:'160g'},{item:'Eggs (hard boiled)',amount:'2'},{item:'New potatoes (cooked)',amount:'100g'},{item:'Green beans',amount:'60g'},{item:'Olives',amount:'20g'},{item:'Mixed leaves',amount:'40g'},{item:'Olive oil & lemon',amount:'1 tsp each'}],
+      method:'Boil the potatoes for 15 minutes until tender. Boil the eggs for 10 minutes, then cool in cold water and peel. Blanch the green beans in boiling water for 3-4 minutes, then drain and cool. Drain the tuna. Arrange everything on a bed of mixed leaves — halved potatoes, quartered eggs, green beans, olives and flaked tuna. Drizzle with olive oil and lemon juice.'},
+    dinner:{name:'Chicken Thigh Tray Bake',cals:450,p:42,c:34,f:14,
+      ingredients:[{item:'Chicken thighs (skinless)',amount:'170g'},{item:'Sweet potato',amount:'100g'},{item:'Peppers',amount:'100g'},{item:'Red onion',amount:'60g'},{item:'Olive oil',amount:'1 tsp'},{item:'Smoked paprika & cumin',amount:'1 tsp each'}],
+      method:'Preheat oven to 200°C. Cube the sweet potato and slice the peppers and onion into chunks. Toss all the veg in olive oil, smoked paprika, cumin, salt and pepper. Spread on a large baking tray. Season the chicken thighs and place on top of the veg. Roast for 30-35 minutes until the chicken is golden and cooked through — juices should run clear. Air fryer option: 190°C for 20-22 mins, shaking halfway.'},
+    snack:{name:'Skyr with Berries',cals:230,p:20,c:24,f:4,
+      ingredients:[{item:'Skyr',amount:'180g'},{item:'Mixed berries',amount:'80g'},{item:'Granola (low sugar)',amount:'20g'}],
+      method:'No cooking needed.'}
+  }
+],
+
+// ═══════════════════════════════════════
+// MEAT — 1800 kcal
+// ═══════════════════════════════════════
+meat_1800: [
+  {
+    breakfast:{name:'Eggs, Salmon & Avocado Toast',cals:450,p:36,c:28,f:20,
+      ingredients:[{item:'Eggs (poached)',amount:'2'},{item:'Smoked salmon',amount:'60g'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'40g'},{item:'Spinach',amount:'40g'},{item:'Lemon juice',amount:'1 tsp'}],
+      method:'Toast the bread. Wilt the spinach in a dry pan for 30 seconds. Mash the avocado with a fork and mix with a squeeze of lemon, salt and pepper. Bring a pan of water to a gentle simmer with a splash of vinegar. Crack each egg into a small cup. Create a gentle swirl in the water and slide the eggs in. Poach for 3-4 minutes until whites are set. Spread avocado on the toast, layer on spinach and salmon, top with poached eggs.'},
+    lunch:{name:'Chicken, Quinoa & Roasted Veg',cals:490,p:46,c:42,f:12,
+      ingredients:[{item:'Chicken breast',amount:'160g'},{item:'Quinoa (cooked)',amount:'120g'},{item:'Courgette',amount:'80g'},{item:'Bell pepper',amount:'80g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Herbs',amount:'to taste'}],
+      method:'Cook quinoa per packet instructions. Dice the courgette and pepper into bite-sized chunks. Toss the veg and tomatoes in olive oil, salt, pepper and mixed herbs. Roast at 200°C for 20-25 minutes until golden at the edges. Air fryer option: 200°C for 10 mins. Season the chicken and cook on a griddle pan over medium-high heat, 5-6 minutes per side. Rest and slice. Build the bowl with quinoa, roasted veg and sliced chicken.'},
+    dinner:{name:'Beef Stir-Fry with Brown Rice',cals:480,p:42,c:44,f:14,
+      ingredients:[{item:'Lean beef strips',amount:'150g'},{item:'Brown rice (cooked)',amount:'120g'},{item:'Tenderstem broccoli',amount:'80g'},{item:'Snap peas',amount:'60g'},{item:'Soy sauce',amount:'2 tbsp'},{item:'Sesame oil',amount:'1 tsp'},{item:'Ginger',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Heat a wok over high heat until very hot. Add a splash of oil, then the beef strips — spread them out and leave for 1 minute to get colour, then stir-fry for 2-3 minutes total until browned. Remove and set aside. In the same wok, add the broccoli and snap peas, stir-fry for 3 minutes. Add the ginger, return the beef, pour in the soy sauce and sesame oil. Toss everything together for 1 minute. Serve over rice. Air fryer option: beef strips at 200°C for 8 mins, then toss with stir-fried veg.'},
+    snack:{name:'Protein Yoghurt & Nuts',cals:280,p:22,c:22,f:10,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'200g'},{item:'Mixed nuts',amount:'20g'},{item:'Honey',amount:'1 tsp'},{item:'Blueberries',amount:'60g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Smoked Mackerel Porridge Bowl',cals:430,p:36,c:38,f:13,
+      ingredients:[{item:'Rolled oats',amount:'70g'},{item:'Milk (semi-skimmed)',amount:'200ml'},{item:'Smoked mackerel',amount:'70g'},{item:'Spinach',amount:'40g'},{item:'Egg (poached)',amount:'1'}],
+      method:'Add oats and milk to a saucepan, cook over medium heat for 4-5 minutes, stirring regularly until thick and creamy. Season with a pinch of salt. Meanwhile flake the mackerel, removing any bones. Wilt the spinach in a dry pan for 30 seconds. Poach the egg in simmering water with a splash of vinegar for 3-4 minutes. Spoon the porridge into a bowl, top with spinach, mackerel flakes and the poached egg.'},
+    lunch:{name:'Prawn & Brown Rice Bowl',cals:480,p:40,c:44,f:12,
+      ingredients:[{item:'King prawns',amount:'180g'},{item:'Brown rice (cooked)',amount:'120g'},{item:'Edamame',amount:'60g'},{item:'Avocado',amount:'40g'},{item:'Soy sauce',amount:'1.5 tbsp'},{item:'Sesame oil',amount:'1 tsp'},{item:'Spring onions',amount:'2'}],
+      method:'Cook rice per packet instructions. If edamame is frozen, microwave for 2 minutes. Heat a pan or wok over high heat with a little oil. Season the prawns with salt and a pinch of chilli. Cook for 2 minutes per side until pink and slightly caramelised. Air fryer option: toss in oil and seasoning, air fry at 200°C for 5-6 mins. Slice avocado and spring onions. Build the bowl — rice, edamame, prawns, avocado. Drizzle with soy sauce and sesame oil.'},
+    dinner:{name:'Salmon, Potato & Green Beans',cals:490,p:42,c:38,f:18,
+      ingredients:[{item:'Salmon fillet',amount:'170g'},{item:'New potatoes',amount:'150g'},{item:'Green beans',amount:'100g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Lemon & dill',amount:'to taste'}],
+      method:'Halve the potatoes and boil in salted water for 15-18 minutes until tender. Boil or steam the green beans for 4-5 minutes until just tender but still with a bite. Season the salmon with salt, pepper and dill. Heat oil in a pan over medium-high heat, place salmon skin-side down. Cook for 3-4 minutes until the skin is crispy, then flip and cook for 2-3 more minutes. Air fryer option: 200°C for 9 mins. Serve everything together with a squeeze of lemon.'},
+    snack:{name:'Tuna Rice Cakes & Cottage Cheese',cals:280,p:28,c:22,f:6,
+      ingredients:[{item:'Tuna in spring water',amount:'100g'},{item:'Rice cakes',amount:'3'},{item:'Cottage cheese',amount:'80g'},{item:'Black pepper',amount:'to taste'}],
+      method:'No cooking needed. Drain tuna, mix with cottage cheese and black pepper. Spoon onto rice cakes.'}
+  },
+  {
+    breakfast:{name:'Turkey Scramble & Toast',cals:440,p:38,c:30,f:15,
+      ingredients:[{item:'Eggs',amount:'2'},{item:'Egg whites',amount:'3'},{item:'Turkey mince (cooked)',amount:'80g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Spinach',amount:'40g'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'If turkey mince isn\'t already cooked, brown it in a pan over high heat for 5-6 minutes. Set aside. Whisk eggs and egg whites together. Heat olive oil in a non-stick pan over medium heat. Add the tomatoes and cook for 1 minute. Add spinach and stir until wilted. Add the cooked mince to warm through, then pour in the eggs. Stir gently until just set. Serve on toast.'},
+    lunch:{name:'Beef & Lentil Bowl',cals:490,p:44,c:42,f:13,
+      ingredients:[{item:'Lean beef mince (5%)',amount:'140g'},{item:'Green lentils (cooked)',amount:'100g'},{item:'Roasted peppers',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'1 tsp'},{item:'Cumin & coriander',amount:'1 tsp'}],
+      method:'Heat a pan over high heat. Add the mince and break it up, cooking for 5-6 minutes until well browned. Season with cumin, coriander, salt and pepper. Air fryer option: place in a foil parcel, air fry at 200°C for 10 mins. Drain and rinse the lentils if from a tin. Add lentils and roasted peppers to the pan, stir together and heat through for 2 minutes. Wilt the spinach in. Serve in a bowl drizzled with olive oil.'},
+    dinner:{name:'Chicken Thigh & Sweet Potato Mash',cals:480,p:44,c:38,f:14,
+      ingredients:[{item:'Chicken thighs (skinless)',amount:'180g'},{item:'Sweet potato',amount:'150g'},{item:'Tenderstem broccoli',amount:'100g'},{item:'Garlic',amount:'2 cloves'},{item:'Olive oil',amount:'1 tsp'},{item:'Paprika',amount:'1 tsp'}],
+      method:'Peel and dice the sweet potato, boil in salted water for 15 minutes until completely tender. Drain and mash with a splash of milk, salt and pepper until smooth. Season the chicken with paprika, garlic powder, salt and pepper. Roast at 200°C for 25-30 minutes until golden and cooked through. Air fryer option: 190°C for 20-22 mins. Steam or boil the broccoli for 4-5 minutes. Serve the chicken over the mash with broccoli on the side.'},
+    snack:{name:'Cottage Cheese & Pineapple',cals:270,p:22,c:26,f:5,
+      ingredients:[{item:'Cottage cheese',amount:'200g'},{item:'Pineapple chunks',amount:'80g'},{item:'Chia seeds',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Cod & Egg Breakfast Bowl',cals:440,p:40,c:24,f:18,
+      ingredients:[{item:'Cod fillet',amount:'120g'},{item:'Eggs',amount:'2'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Spinach',amount:'60g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Season the cod with salt, pepper and a little paprika. Heat oil in a pan over medium-high heat. Cook the cod for 3-4 minutes per side until golden and it flakes easily. Air fryer option: 200°C for 8 mins. Remove and rest. In the same pan, add the tomatoes and cook for 1 minute. Wilt the spinach for 30 seconds. Scramble or poach the eggs. Toast the bread. Flake the cod and serve everything together in a bowl or on the toast.'},
+    lunch:{name:'Chicken & Avocado Salad',cals:480,p:44,c:28,f:20,
+      ingredients:[{item:'Chicken breast',amount:'160g'},{item:'Avocado',amount:'60g'},{item:'Mixed leaves',amount:'60g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Cucumber',amount:'60g'},{item:'Olive oil',amount:'1 tsp'},{item:'Balsamic vinegar',amount:'1 tbsp'}],
+      method:'Season the chicken and cook on a griddle pan over medium-high heat, 5-6 minutes per side. Air fryer option: 190°C for 12 mins. Rest for 2 minutes then slice. Halve the tomatoes, slice the cucumber and avocado. Arrange the leaves in a bowl, add the salad ingredients and sliced chicken. Drizzle with olive oil and balsamic.'},
+    dinner:{name:'Tuna & Wholewheat Pasta',cals:490,p:42,c:44,f:12,
+      ingredients:[{item:'Tuna in spring water',amount:'160g'},{item:'Wholewheat pasta (cooked)',amount:'120g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Courgette',amount:'80g'},{item:'Garlic',amount:'2 cloves'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Chilli flakes',amount:'pinch'}],
+      method:'Cook pasta per packet instructions, drain and reserve a splash of pasta water. Slice the courgette into half-moons and halve the tomatoes. Heat olive oil in a pan over medium heat. Add garlic and chilli, cook for 30 seconds. Add courgette and tomatoes, cook for 4-5 minutes until softened. Drain the tuna and add to the pan, breaking it up. Toss in the pasta with a splash of pasta water and mix everything together over the heat for 1 minute.'},
+    snack:{name:'Protein Smoothie',cals:280,p:28,c:24,f:6,
+      ingredients:[{item:'Whey protein',amount:'1 scoop'},{item:'Banana',amount:'half'},{item:'Milk (semi-skimmed)',amount:'250ml'},{item:'Peanut butter',amount:'1 tsp'}],
+      method:'Add all ingredients to a blender and blend for 30-45 seconds until smooth.'}
+  },
+  {
+    breakfast:{name:'Full Protein Breakfast',cals:450,p:38,c:28,f:19,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Smoked salmon',amount:'50g'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Avocado',amount:'40g'},{item:'Spinach',amount:'40g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Whisk the eggs with salt and pepper. Wilt the spinach in a dry pan for 30 seconds. Mash avocado with salt and lemon juice. Heat olive oil in a non-stick pan over medium-low heat, add eggs and stir slowly until just set. Toast the bread, spread with avocado, top with spinach and scrambled eggs, lay salmon alongside.'},
+    lunch:{name:'Mackerel & Sweet Potato Bowl',cals:480,p:38,c:44,f:14,
+      ingredients:[{item:'Tinned mackerel in brine',amount:'140g'},{item:'Sweet potato',amount:'160g'},{item:'Spinach',amount:'60g'},{item:'Red onion',amount:'40g'},{item:'Olive oil',amount:'1 tsp'},{item:'Lemon juice',amount:'1 tbsp'}],
+      method:'Dice the sweet potato and toss with olive oil, salt and pepper. Roast at 200°C for 25 minutes until golden and tender. Air fryer option: 200°C for 15 mins. Thinly slice the red onion and soak in lemon juice for 5 minutes — this takes the harshness off. Drain and flake the mackerel. Toss the spinach, sweet potato, mackerel and pickled onion together. Drizzle with olive oil and the remaining lemon juice.'},
+    dinner:{name:'Lean Beef Meatballs & Pasta',cals:490,p:44,c:42,f:14,
+      ingredients:[{item:'Lean beef mince (5%)',amount:'150g'},{item:'Wholewheat pasta (cooked)',amount:'100g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Onion',amount:'half'},{item:'Garlic',amount:'2 cloves'},{item:'Italian herbs',amount:'1 tsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook pasta per packet instructions. Mix the mince with salt, pepper and half the herbs, roll into 8-10 small balls. Heat oil in a pan over medium heat, cook the meatballs for 8-10 minutes, turning occasionally, until browned all over. Remove. In the same pan, fry diced onion for 3 minutes, add garlic for 1 minute. Add tinned tomatoes and remaining herbs, season and simmer for 5 minutes. Return meatballs to the sauce, cover and cook for 10 minutes. Air fryer option: meatballs at 190°C for 10 mins, then add to sauce. Toss with pasta.'},
+    snack:{name:'Skyr & Fruit',cals:270,p:24,c:26,f:4,
+      ingredients:[{item:'Skyr',amount:'200g'},{item:'Mixed berries',amount:'80g'},{item:'Granola',amount:'20g'}],
+      method:'No cooking needed.'}
+  }
+],
+
+// ═══════════════════════════════════════
+// MEAT — 2000 kcal
+// ═══════════════════════════════════════
+meat_2000: [
+  {
+    breakfast:{name:'Eggs, Salmon, Avocado & Toast',cals:480,p:38,c:30,f:22,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Smoked salmon',amount:'70g'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'50g'},{item:'Spinach',amount:'40g'}],
+      method:'Mash the avocado with a pinch of salt, pepper and lemon juice. Toast the bread. Wilt the spinach in a dry pan for 30 seconds. Whisk eggs with salt and pepper. Heat a little oil in a non-stick pan over medium-low heat, add eggs and stir slowly until just set. Spread avocado on toast, top with spinach, lay salmon alongside and pile the eggs on top.'},
+    lunch:{name:'Chicken, Brown Rice & Veg',cals:540,p:48,c:48,f:13,
+      ingredients:[{item:'Chicken breast',amount:'170g'},{item:'Brown rice (cooked)',amount:'140g'},{item:'Broccoli',amount:'100g'},{item:'Bell pepper',amount:'80g'},{item:'Soy sauce',amount:'1.5 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Season the chicken with salt, pepper and garlic powder. Griddle or pan-fry over medium-high heat, 5-6 minutes per side until cooked through. Rest and slice. Toss broccoli and pepper in olive oil and a pinch of salt. Roast at 200°C for 20-25 minutes or air fry at 190-200°C for 8-10 mins. Build the bowl, drizzle everything with soy sauce.'},
+    dinner:{name:'Salmon, Quinoa & Greens',cals:520,p:44,c:42,f:18,
+      ingredients:[{item:'Salmon fillet',amount:'180g'},{item:'Quinoa (cooked)',amount:'130g'},{item:'Asparagus',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Lemon & dill',amount:'to taste'}],
+      method:'Cook quinoa per packet instructions. Toss the asparagus in olive oil, salt and pepper. Roast at 200°C for 10-12 minutes. Season the salmon with dill, salt and pepper. Heat oil in an oven-proof pan over medium-high heat. Cook skin-side down for 3-4 minutes until skin is crispy, flip, then finish in the oven for 4-5 minutes. Air fryer option: 200°C for 9-10 mins. Wilt the spinach in a dry pan. Serve salmon over quinoa with asparagus and spinach.'},
+    snack:{name:'Cottage Cheese, Nuts & Fruit',cals:300,p:24,c:24,f:12,
+      ingredients:[{item:'Cottage cheese',amount:'200g'},{item:'Mixed nuts',amount:'20g'},{item:'Apple',amount:'1 medium'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Protein Porridge with Eggs',cals:470,p:40,c:44,f:12,
+      ingredients:[{item:'Rolled oats',amount:'80g'},{item:'Milk (semi-skimmed)',amount:'250ml'},{item:'Eggs (hard boiled)',amount:'2'},{item:'Banana',amount:'half'},{item:'Almond butter',amount:'1 tsp'}],
+      method:'Bring eggs to the boil in cold water, cook for 10 minutes, then cool in cold water and peel. Cook oats in milk in a saucepan over medium heat for 4-5 minutes, stirring regularly until thick and creamy. Stir in almond butter. Serve with sliced banana on top. Eat the boiled eggs on the side with a pinch of salt and pepper.'},
+    lunch:{name:'Beef & Quinoa Bowl',cals:540,p:46,c:44,f:14,
+      ingredients:[{item:'Lean beef mince (5%)',amount:'160g'},{item:'Quinoa (cooked)',amount:'130g'},{item:'Avocado',amount:'50g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Lime juice',amount:'1 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook quinoa per packet instructions. Heat a pan over high heat, add the mince and break it up. Cook for 6-8 minutes until well browned, season with cumin, salt and pepper. Air fryer option: mince in foil parcel at 200°C for 10 mins. Slice avocado and halve tomatoes. Build the bowl — quinoa, mince, spinach, avocado and tomatoes. Squeeze lime juice and drizzle olive oil over the top.'},
+    dinner:{name:'Prawn & Rice Noodle Stir-Fry',cals:520,p:42,c:46,f:13,
+      ingredients:[{item:'King prawns',amount:'200g'},{item:'Rice noodles (cooked)',amount:'120g'},{item:'Pak choi',amount:'80g'},{item:'Mushrooms',amount:'60g'},{item:'Soy sauce',amount:'2 tbsp'},{item:'Sesame oil',amount:'1.5 tsp'},{item:'Ginger & garlic',amount:'1 tsp each'}],
+      method:'Soak noodles in boiling water for 5 minutes, drain. Heat a wok over high heat. Add oil, then mushrooms — cook for 2 minutes without stirring to get colour. Add pak choi, ginger and garlic, stir-fry for 2 minutes. Push veg to the side, add the prawns in a single layer. Cook for 2 minutes per side until pink. Pour in soy sauce and sesame oil, add noodles and toss everything together for 1 minute. Air fryer option: prawns at 200°C for 5-6 mins, toss with stir-fried veg and noodles.'},
+    snack:{name:'Greek Yoghurt & Seeds',cals:300,p:22,c:24,f:11,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'220g'},{item:'Mixed seeds',amount:'20g'},{item:'Honey',amount:'1 tsp'},{item:'Berries',amount:'80g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Full Protein Omelette',cals:470,p:42,c:20,f:22,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Egg whites',amount:'2'},{item:'Turkey breast',amount:'70g'},{item:'Mushrooms',amount:'60g'},{item:'Spinach',amount:'40g'},{item:'Feta',amount:'25g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Slice mushrooms and dice turkey. Whisk eggs and egg whites together, season. Heat olive oil in a non-stick pan over medium heat. Cook mushrooms for 3 minutes until golden. Add turkey to warm through for 1 minute. Add spinach and stir until wilted. Pour in the egg mixture. Let it set on the bottom for 2-3 minutes without stirring. Crumble feta over one half. When the edges are set and the middle is just set, fold in half and serve. Air fryer option: pour into an oven-safe dish, air fry at 170°C for 8-10 mins.'},
+    lunch:{name:'Chicken & Lentil Bowl',cals:540,p:48,c:46,f:13,
+      ingredients:[{item:'Chicken breast',amount:'170g'},{item:'Green lentils (cooked)',amount:'120g'},{item:'Roasted peppers',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Cumin',amount:'1 tsp'}],
+      method:'Season the chicken with cumin, salt and pepper. Griddle over medium-high heat, 5-6 minutes per side until cooked through. Air fryer option: 190°C for 12 mins. Rest and slice. Drain and rinse the lentils if tinned. Warm the lentils in a pan with a little oil, add the spinach and stir until wilted. Season with salt and cumin. Serve in a bowl with chicken, lentils, roasted peppers and a drizzle of olive oil.'},
+    dinner:{name:'Cod, Sweet Potato & Greens',cals:500,p:44,c:44,f:12,
+      ingredients:[{item:'Cod fillet',amount:'190g'},{item:'Sweet potato',amount:'150g'},{item:'Green beans',amount:'80g'},{item:'Tenderstem broccoli',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Paprika & lemon',amount:'to taste'}],
+      method:'Dice the sweet potato, toss in olive oil, paprika, salt and pepper. Roast at 200°C for 25 minutes until golden. Air fryer option: 200°C for 15 mins. Season the cod with salt, pepper and lemon zest. Bake at 200°C for 12-15 minutes until it flakes easily. Air fryer option: 200°C for 8 mins. Steam or boil green beans and broccoli for 4-5 minutes. Plate up everything with a squeeze of lemon.'},
+    snack:{name:'Protein Smoothie',cals:320,p:30,c:28,f:8,
+      ingredients:[{item:'Whey protein',amount:'1.5 scoops'},{item:'Banana',amount:'1 small'},{item:'Milk',amount:'250ml'},{item:'Peanut butter',amount:'1 tsp'}],
+      method:'Blend all ingredients for 30-45 seconds until smooth.'}
+  },
+  {
+    breakfast:{name:'Smoked Mackerel & Egg Toast',cals:470,p:38,c:28,f:22,
+      ingredients:[{item:'Smoked mackerel',amount:'90g'},{item:'Eggs (poached)',amount:'2'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Spinach',amount:'40g'},{item:'Lemon juice',amount:'1 tsp'}],
+      method:'Toast the bread. Wilt the spinach in a dry pan for 30 seconds. Flake the mackerel. Bring a pan of water to a gentle simmer with a splash of vinegar. Create a swirl and slide the eggs in one at a time from small cups. Poach for 3-4 minutes. Pile spinach on the toast, add mackerel flakes, top with poached eggs and squeeze over lemon juice.'},
+    lunch:{name:'Turkey & Brown Rice Bowl',cals:530,p:46,c:44,f:12,
+      ingredients:[{item:'Turkey breast',amount:'170g'},{item:'Brown rice (cooked)',amount:'140g'},{item:'Broccoli',amount:'80g'},{item:'Courgette',amount:'80g'},{item:'Soy sauce',amount:'1.5 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Season the turkey and cook on a griddle pan over medium-high heat, 6-7 minutes per side until cooked through. Air fryer option: 190°C for 14-16 mins. Rest and slice. Toss broccoli and courgette in olive oil, roast at 200°C for 20 minutes or air fry at 200°C for 8-10 mins. Build the bowl and drizzle with soy sauce.'},
+    dinner:{name:'Beef Meatballs, Pasta & Tomato',cals:520,p:46,c:44,f:14,
+      ingredients:[{item:'Lean beef mince (5%)',amount:'160g'},{item:'Wholewheat pasta (cooked)',amount:'120g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Onion & garlic',amount:'to taste'},{item:'Italian herbs',amount:'1 tsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Mix mince with salt, pepper and herbs. Roll into 10-12 small balls. Heat oil in a pan and cook the meatballs over medium heat for 8-10 minutes, turning regularly until browned. Air fryer option: 190°C for 10 mins. Remove meatballs. In the same pan, soften diced onion for 3 minutes, add minced garlic for 1 minute. Add tinned tomatoes, season, simmer for 5 minutes. Return meatballs, cover and cook for 10 minutes. Cook pasta per packet instructions. Toss pasta with the sauce and meatballs.'},
+    snack:{name:'Tuna, Rice Cakes & Cottage Cheese',cals:310,p:30,c:26,f:7,
+      ingredients:[{item:'Tuna in spring water',amount:'120g'},{item:'Rice cakes',amount:'3'},{item:'Cottage cheese',amount:'100g'}],
+      method:'No cooking needed. Drain and flake tuna, mix with cottage cheese, spoon onto rice cakes.'}
+  },
+  {
+    breakfast:{name:'Salmon & Egg Bowl',cals:480,p:40,c:28,f:22,
+      ingredients:[{item:'Smoked salmon',amount:'80g'},{item:'Eggs (scrambled)',amount:'3'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Avocado',amount:'50g'},{item:'Spinach',amount:'40g'}],
+      method:'Mash avocado with salt and lemon juice. Whisk eggs with salt and pepper. Heat a little oil in a non-stick pan over medium-low heat, add eggs and stir slowly until just set. Toast the bread. Wilt the spinach for 30 seconds in a dry pan. Spread avocado on toast, layer on spinach, pile the eggs on top. Serve salmon on the side.'},
+    lunch:{name:'Chicken Thigh & Quinoa',cals:540,p:48,c:42,f:16,
+      ingredients:[{item:'Chicken thighs (skinless)',amount:'190g'},{item:'Quinoa (cooked)',amount:'130g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Cucumber',amount:'60g'},{item:'Feta',amount:'20g'},{item:'Olive oil',amount:'1 tsp'},{item:'Lemon juice',amount:'1 tbsp'}],
+      method:'Cook quinoa per packet instructions. Season the chicken thighs with paprika, salt and pepper. Roast at 200°C for 25-30 minutes until golden and cooked through. Air fryer option: 190°C for 20-22 mins. Halve the tomatoes, dice the cucumber. Build the bowl — quinoa, chopped salad, crumbled feta, sliced chicken. Dress with olive oil and lemon juice.'},
+    dinner:{name:'Prawn & Avocado Pasta',cals:500,p:40,c:44,f:16,
+      ingredients:[{item:'King prawns',amount:'200g'},{item:'Wholewheat pasta (cooked)',amount:'120g'},{item:'Avocado',amount:'50g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Garlic',amount:'2 cloves'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Chilli flakes',amount:'pinch'}],
+      method:'Cook pasta per packet instructions, drain and reserve a splash of pasta water. Halve the tomatoes and dice the avocado. Heat olive oil in a pan over medium-high heat. Add garlic and chilli, cook for 30 seconds. Add the prawns and cook for 2-3 minutes until pink. Add tomatoes and cook for 1 minute. Toss in pasta with a splash of pasta water. Remove from heat and fold in the avocado gently — you want it creamy, not mushy. Air fryer option: prawns at 200°C for 5-6 mins, combine with veg and pasta.'},
+    snack:{name:'Skyr & Mixed Nuts',cals:300,p:24,c:22,f:12,
+      ingredients:[{item:'Skyr',amount:'200g'},{item:'Mixed nuts',amount:'25g'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  }
+],
+
+// ═══════════════════════════════════════
+// MEAT — 2200 kcal
+// ═══════════════════════════════════════
+meat_2200: [
+  {
+    breakfast:{name:'Big Protein Breakfast',cals:550,p:44,c:36,f:24,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Smoked salmon',amount:'80g'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'60g'},{item:'Spinach',amount:'50g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Mash avocado with salt and lemon juice. Toast the bread. Wilt the spinach in a dry pan for 30 seconds. Whisk eggs with salt and pepper. Heat olive oil in a non-stick pan over medium-low heat, stir eggs slowly until just set. Spread avocado on toast, top with spinach. Serve eggs and salmon alongside.'},
+    lunch:{name:'Chicken, Rice & Roasted Veg',cals:580,p:52,c:52,f:14,
+      ingredients:[{item:'Chicken breast',amount:'190g'},{item:'Brown rice (cooked)',amount:'150g'},{item:'Broccoli',amount:'100g'},{item:'Bell pepper',amount:'100g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Soy sauce',amount:'1.5 tbsp'}],
+      method:'Cook rice per packet instructions. Season chicken with salt, pepper and garlic powder. Griddle over medium-high heat, 5-6 minutes per side. Rest and slice. Toss broccoli and pepper in olive oil and salt. Roast at 200°C for 20-25 mins or air fry at 190-200°C for 10 mins. Assemble bowl and drizzle with soy sauce.'},
+    dinner:{name:'Salmon, Potato & Asparagus',cals:570,p:46,c:44,f:20,
+      ingredients:[{item:'Salmon fillet',amount:'190g'},{item:'New potatoes',amount:'160g'},{item:'Asparagus',amount:'100g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Lemon & dill',amount:'to taste'}],
+      method:'Halve the potatoes and boil in salted water for 15-18 minutes until tender. Toss asparagus in olive oil and salt. Season the salmon with dill, salt and pepper. Heat oil in a pan, cook salmon skin-side down for 3-4 minutes until skin is crispy. Flip and finish in oven at 200°C for 4-5 minutes. Air fryer option: 200°C for 9-10 mins. Roast asparagus at 200°C for 8-10 mins alongside or air fry at 190°C for 6 mins. Squeeze lemon over everything before serving.'},
+    snack:{name:'High Protein Yoghurt & Nuts',cals:330,p:26,c:26,f:13,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'240g'},{item:'Mixed nuts',amount:'25g'},{item:'Honey',amount:'1 tsp'},{item:'Berries',amount:'60g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Mackerel, Eggs & Toast',cals:540,p:42,c:34,f:24,
+      ingredients:[{item:'Smoked mackerel',amount:'100g'},{item:'Eggs (scrambled)',amount:'3'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Cherry tomatoes',amount:'60g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Flake the mackerel, removing any bones. Halve the tomatoes. Whisk eggs with salt and pepper. Heat oil in a non-stick pan, add tomatoes and cook for 1 minute. Add eggs and stir gently over medium-low heat until just set. Fold in mackerel off the heat. Toast the bread and serve everything together.'},
+    lunch:{name:'Beef, Lentil & Veg Bowl',cals:570,p:50,c:48,f:14,
+      ingredients:[{item:'Lean beef mince (5%)',amount:'170g'},{item:'Green lentils (cooked)',amount:'120g'},{item:'Roasted peppers',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Cumin & coriander',amount:'1 tsp'}],
+      method:'Heat a pan over high heat. Add mince and break it up, cook for 5-6 minutes until well browned, season with cumin, coriander, salt and pepper. Air fryer option: mince in foil parcel, 200°C for 10 mins. Add lentils and roasted peppers to the pan, stir and heat through for 2 minutes. Wilt the spinach in. Drizzle with olive oil and serve.'},
+    dinner:{name:'Turkey Meatballs & Pasta',cals:570,p:52,c:48,f:14,
+      ingredients:[{item:'Turkey mince',amount:'180g'},{item:'Wholewheat pasta (cooked)',amount:'130g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Onion & garlic',amount:'to taste'},{item:'Italian herbs',amount:'1 tsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Mix turkey mince with salt, pepper and herbs, roll into 10-12 balls. Cook in a pan over medium heat for 8-10 minutes, turning regularly until browned all over. Air fryer option: 190°C for 10 mins. Remove and set aside. Soften diced onion in the pan for 3 minutes, add minced garlic for 1 minute. Add tinned tomatoes, herbs, season. Simmer for 5 minutes. Return meatballs, cover and cook for 10 minutes. Cook pasta, drain and toss with sauce.'},
+    snack:{name:'Protein Smoothie',cals:350,p:34,c:30,f:9,
+      ingredients:[{item:'Whey protein',amount:'1.5 scoops'},{item:'Banana',amount:'1 small'},{item:'Milk',amount:'300ml'},{item:'Almond butter',amount:'1 tsp'}],
+      method:'Blend all ingredients for 30-45 seconds until smooth.'}
+  },
+  {
+    breakfast:{name:'Chicken Egg Muffins & Porridge',cals:540,p:44,c:44,f:14,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Cooked chicken',amount:'80g'},{item:'Rolled oats',amount:'60g'},{item:'Milk',amount:'180ml'},{item:'Banana',amount:'half'},{item:'Spinach',amount:'40g'}],
+      method:'Preheat oven to 180°C. Whisk eggs with salt and pepper. Divide diced chicken and spinach between 4 oiled muffin cups, pour egg mixture over. Bake for 15 minutes until set and golden. Air fryer option: pour into silicone cups, air fry at 160°C for 10-12 mins. Cook oats in milk on the stovetop for 4-5 minutes, stirring regularly. Serve with banana. Eat the egg muffins on the side.'},
+    lunch:{name:'Salmon & Quinoa Bowl',cals:560,p:48,c:44,f:18,
+      ingredients:[{item:'Salmon fillet',amount:'180g'},{item:'Quinoa (cooked)',amount:'140g'},{item:'Avocado',amount:'50g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Cucumber',amount:'60g'},{item:'Lemon juice',amount:'1 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook quinoa per packet instructions. Season the salmon with salt and pepper. Heat oil in a pan, cook skin-side down for 3-4 minutes until crispy. Flip and cook 2-3 minutes more. Air fryer option: 200°C for 9-10 mins. Flake the salmon into chunks. Slice avocado, halve tomatoes, dice cucumber. Build the bowl — quinoa, salad ingredients, salmon. Drizzle with lemon juice and olive oil.'},
+    dinner:{name:'Chicken Thigh Tray Bake',cals:560,p:50,c:40,f:18,
+      ingredients:[{item:'Chicken thighs (skinless)',amount:'200g'},{item:'Sweet potato',amount:'160g'},{item:'Peppers',amount:'100g'},{item:'Red onion',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Smoked paprika & cumin',amount:'1 tsp each'}],
+      method:'Preheat oven to 200°C. Cube the sweet potato, slice peppers and onion. Toss all the veg in olive oil, paprika, cumin, salt and pepper. Spread on a large baking tray. Season the chicken thighs and nestle on top of the veg. Roast for 30-35 minutes until the chicken is golden and juices run clear. Air fryer option: 190°C for 20-22 mins, shaking halfway.'},
+    snack:{name:'Cottage Cheese, Seeds & Fruit',cals:330,p:26,c:28,f:10,
+      ingredients:[{item:'Cottage cheese',amount:'220g'},{item:'Chia seeds',amount:'1 tsp'},{item:'Mixed berries',amount:'80g'},{item:'Rice cakes',amount:'2'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Prawn & Egg Breakfast',cals:520,p:44,c:26,f:24,
+      ingredients:[{item:'King prawns',amount:'120g'},{item:'Eggs',amount:'3'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'50g'},{item:'Spinach',amount:'50g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Mash avocado with salt and lemon juice. Heat oil in a pan over high heat. Season the prawns and cook for 2 minutes per side until pink and slightly caramelised. Air fryer option: toss prawns in oil and seasoning, air fry at 200°C for 5 mins. Remove prawns. In the same pan over medium-low heat, scramble the eggs. Wilt the spinach in a dry pan. Toast the bread. Spread avocado on toast, top with spinach, eggs and prawns.'},
+    lunch:{name:'Turkey & Brown Rice Power Bowl',cals:570,p:52,c:48,f:13,
+      ingredients:[{item:'Turkey breast',amount:'190g'},{item:'Brown rice (cooked)',amount:'150g'},{item:'Broccoli',amount:'80g'},{item:'Courgette',amount:'80g'},{item:'Soy sauce',amount:'2 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Season turkey with salt, pepper and garlic powder. Cook on a griddle pan over medium-high heat, 6-7 minutes per side until cooked through. Air fryer option: 190°C for 14-16 mins. Rest and slice. Toss broccoli and courgette in olive oil. Roast at 200°C for 20 mins or air fry at 200°C for 8-10 mins. Assemble bowl and drizzle with soy sauce.'},
+    dinner:{name:'Beef Stir-Fry & Noodles',cals:570,p:50,c:48,f:15,
+      ingredients:[{item:'Lean beef strips',amount:'170g'},{item:'Rice noodles (cooked)',amount:'130g'},{item:'Tenderstem broccoli',amount:'80g'},{item:'Snap peas',amount:'60g'},{item:'Soy sauce',amount:'2 tbsp'},{item:'Sesame oil',amount:'1.5 tsp'},{item:'Ginger & garlic',amount:'1 tsp each'}],
+      method:'Soak noodles in boiling water for 5 minutes, drain. Heat a wok over very high heat. Add a splash of oil, spread the beef strips out and leave for 1 minute to get colour. Stir-fry for 2-3 minutes total until browned. Remove. In the same wok, stir-fry broccoli and snap peas for 3 minutes. Add ginger and garlic, cook for 30 seconds. Return the beef, pour in soy sauce and sesame oil, add noodles and toss everything together for 1 minute. Air fryer option: beef strips at 200°C for 8 mins, then toss with stir-fried veg and noodles.'},
+    snack:{name:'Skyr, Granola & Berries',cals:350,p:28,c:34,f:8,
+      ingredients:[{item:'Skyr',amount:'220g'},{item:'Granola (low sugar)',amount:'30g'},{item:'Mixed berries',amount:'80g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Full Cooked Breakfast',cals:540,p:44,c:30,f:26,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Turkey rashers',amount:'4'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Mushrooms',amount:'80g'},{item:'Spinach',amount:'50g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Preheat grill or heat a pan over medium-high heat. Grill or pan-fry turkey rashers for 3-4 minutes per side until cooked through and slightly crispy. Air fryer option: 190°C for 8 mins. In the same pan, cook sliced mushrooms in the juices for 3-4 minutes until golden. Wilt the spinach for 30 seconds. Whisk eggs with salt and pepper and scramble in a separate pan over medium-low heat. Toast the bread. Plate everything up.'},
+    lunch:{name:'Cod, Lentil & Veg Bowl',cals:560,p:48,c:46,f:14,
+      ingredients:[{item:'Cod fillet',amount:'200g'},{item:'Green lentils (cooked)',amount:'120g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Lemon & paprika',amount:'to taste'}],
+      method:'Season the cod with paprika, salt, pepper and lemon zest. Heat oil in a pan over medium-high heat, cook the cod for 3-4 minutes per side until golden and flakes easily. Air fryer option: 200°C for 8-9 mins. Drain and rinse lentils if tinned. Warm lentils in a pan with olive oil for 2 minutes, add spinach and stir until wilted, add halved tomatoes. Season with salt, pepper and lemon juice. Flake the cod over the top.'},
+    dinner:{name:'Chicken Mince & Rice',cals:560,p:50,c:44,f:14,
+      ingredients:[{item:'Chicken mince',amount:'190g'},{item:'Brown rice (cooked)',amount:'140g'},{item:'Tenderstem broccoli',amount:'100g'},{item:'Soy sauce',amount:'2 tbsp'},{item:'Sesame oil',amount:'1 tsp'},{item:'Ginger',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Heat a wok or large pan over high heat. Add a splash of oil, then the chicken mince. Break it up with a spatula and cook for 5-6 minutes until cooked through and slightly golden. Add ginger and cook for 30 seconds. Add broccoli and stir-fry for 3 minutes. Pour in soy sauce and sesame oil, toss everything together. Serve over rice.'},
+    snack:{name:'Tuna, Cottage Cheese & Crackers',cals:330,p:34,c:22,f:8,
+      ingredients:[{item:'Tuna in spring water',amount:'120g'},{item:'Cottage cheese',amount:'100g'},{item:'Wholegrain crackers',amount:'4'},{item:'Cucumber',amount:'60g'}],
+      method:'No cooking needed.'}
+  }
+],
+
+// ═══════════════════════════════════════
+// MEAT — 2400 kcal
+// ═══════════════════════════════════════
+meat_2400: [
+  {
+    breakfast:{name:'Big Salmon & Egg Breakfast',cals:600,p:46,c:36,f:28,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Smoked salmon',amount:'90g'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'70g'},{item:'Spinach',amount:'50g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Mash avocado with salt, pepper and lemon juice. Toast the bread. Wilt spinach in a dry pan for 30 seconds. Whisk eggs, heat oil in a non-stick pan and scramble slowly over medium-low heat until just set. Spread avocado on toast, top with spinach and eggs. Serve salmon on the side.'},
+    lunch:{name:'Chicken, Rice & Full Veg',cals:640,p:54,c:56,f:16,
+      ingredients:[{item:'Chicken breast',amount:'200g'},{item:'Brown rice (cooked)',amount:'160g'},{item:'Broccoli',amount:'100g'},{item:'Bell pepper',amount:'100g'},{item:'Courgette',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Soy sauce',amount:'2 tbsp'}],
+      method:'Cook rice per packet instructions. Season chicken with salt, pepper and garlic powder. Griddle over medium-high heat, 5-6 minutes per side. Rest and slice. Toss all veg in olive oil and salt. Roast at 200°C for 20-25 mins or air fry at 190-200°C for 10-12 mins. Assemble bowl, drizzle with soy sauce.'},
+    dinner:{name:'Salmon, Quinoa & Greens',cals:620,p:48,c:48,f:22,
+      ingredients:[{item:'Salmon fillet',amount:'200g'},{item:'Quinoa (cooked)',amount:'150g'},{item:'Asparagus',amount:'100g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Lemon & dill',amount:'to taste'}],
+      method:'Cook quinoa per packet instructions. Toss asparagus in olive oil and salt, roast at 200°C for 10-12 mins or air fry at 190°C for 6 mins. Season salmon with dill, salt and pepper. Heat oil in an oven-proof pan, cook skin-side down for 3-4 mins until crispy. Flip, finish in oven at 200°C for 4-5 mins. Air fryer option: 200°C for 9-10 mins. Wilt spinach in dry pan. Plate up quinoa, greens, asparagus and salmon with a squeeze of lemon.'},
+    snack:{name:'Protein Yoghurt & Nuts',cals:360,p:28,c:28,f:14,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'250g'},{item:'Mixed nuts',amount:'30g'},{item:'Honey',amount:'1 tsp'},{item:'Banana',amount:'half'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Mackerel & Egg Loaded Toast',cals:580,p:44,c:38,f:24,
+      ingredients:[{item:'Smoked mackerel',amount:'110g'},{item:'Eggs (poached)',amount:'2'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'50g'},{item:'Cherry tomatoes',amount:'60g'}],
+      method:'Mash avocado with salt and lemon juice. Toast the bread. Halve the tomatoes. Bring a pan of water to a gentle simmer with a splash of vinegar. Create a swirl and slide eggs in from small cups. Poach for 3-4 minutes. Spread avocado on toast, top with flaked mackerel and tomatoes, finish with poached eggs.'},
+    lunch:{name:'Beef, Brown Rice & Veg',cals:640,p:52,c:54,f:16,
+      ingredients:[{item:'Lean beef strips',amount:'180g'},{item:'Brown rice (cooked)',amount:'160g'},{item:'Tenderstem broccoli',amount:'100g'},{item:'Snap peas',amount:'60g'},{item:'Soy sauce',amount:'2 tbsp'},{item:'Sesame oil',amount:'1.5 tsp'}],
+      method:'Cook rice per packet instructions. Heat a wok over very high heat. Add oil, spread beef strips out and leave for 1 minute for colour. Stir-fry for 2-3 minutes until browned. Remove. Air fryer option: 200°C for 8 mins. In same wok, stir-fry broccoli and snap peas for 3 minutes. Return beef, pour in soy sauce and sesame oil, toss and serve over rice.'},
+    dinner:{name:'Prawn Curry & Rice',cals:620,p:46,c:54,f:18,
+      ingredients:[{item:'King prawns',amount:'220g'},{item:'Brown rice (cooked)',amount:'150g'},{item:'Light coconut milk',amount:'100ml'},{item:'Spinach',amount:'60g'},{item:'Onion',amount:'half'},{item:'Curry paste (mild)',amount:'1 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Dice the onion finely. Heat oil in a pan over medium heat. Cook the onion for 3-4 minutes until softened. Add the curry paste and stir for 1 minute until fragrant. Pour in the coconut milk and bring to a gentle simmer. Add the prawns and cook for 4-5 minutes, stirring occasionally, until they turn pink and are cooked through. Stir in the spinach at the end until wilted. Taste and season with salt. Serve over rice.'},
+    snack:{name:'Protein Smoothie & Eggs',cals:380,p:36,c:32,f:10,
+      ingredients:[{item:'Whey protein',amount:'1.5 scoops'},{item:'Banana',amount:'1 small'},{item:'Milk',amount:'300ml'},{item:'Eggs (hard boiled)',amount:'1'}],
+      method:'Blend smoothie ingredients for 30-45 seconds. Boil egg for 10 minutes separately, cool in cold water before peeling.'}
+  },
+  {
+    breakfast:{name:'Turkey & Egg White Omelette + Toast',cals:570,p:48,c:34,f:20,
+      ingredients:[{item:'Egg whites',amount:'6'},{item:'Egg (whole)',amount:'1'},{item:'Turkey breast',amount:'80g'},{item:'Mushrooms',amount:'60g'},{item:'Spinach',amount:'50g'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Slice the mushrooms and dice the turkey. Whisk egg whites and whole egg together, season. Heat olive oil in a non-stick pan over medium heat. Cook mushrooms for 3 minutes until golden. Add turkey to warm through for 1 minute. Add spinach and stir until wilted. Pour in the egg mixture. Let it set on the bottom for 2-3 minutes. Fold in half when the edges are set. Air fryer option: pour into an oven-safe dish, air fry at 170°C for 8-10 mins. Toast the bread and serve alongside.'},
+    lunch:{name:'Chicken & Sweet Potato Bowl',cals:640,p:52,c:56,f:16,
+      ingredients:[{item:'Chicken breast',amount:'200g'},{item:'Sweet potato',amount:'170g'},{item:'Broccoli',amount:'100g'},{item:'Olive oil',amount:'2 tsp'},{item:'Paprika & garlic',amount:'1 tsp each'}],
+      method:'Dice the sweet potato into 2cm cubes. Toss in olive oil, paprika, garlic powder, salt and pepper. Roast at 200°C for 25 minutes until golden. Air fryer option: 200°C for 15 mins. Season the chicken and cook on a griddle pan over medium-high heat, 5-6 minutes per side. Air fryer option: 190°C for 12 mins. Rest and slice. Toss broccoli in oil and roast at 200°C for 15 mins or air fry at 200°C for 8 mins. Build the bowl.'},
+    dinner:{name:'Beef Mince, Lentils & Pasta',cals:620,p:52,c:52,f:16,
+      ingredients:[{item:'Lean beef mince (5%)',amount:'180g'},{item:'Wholewheat pasta (cooked)',amount:'130g'},{item:'Green lentils (cooked)',amount:'80g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Garlic & herbs',amount:'to taste'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook pasta per packet instructions. Heat oil in a pan over high heat. Add mince and break it up, cook for 5-6 minutes until well browned. Add minced garlic and herbs, cook for 30 seconds. Pour in tinned tomatoes, add lentils. Stir, bring to a simmer and cook for 10-12 minutes until thick. Season well. Toss with drained pasta.'},
+    snack:{name:'Skyr, Seeds & Fruit',cals:380,p:30,c:36,f:10,
+      ingredients:[{item:'Skyr',amount:'230g'},{item:'Mixed seeds',amount:'20g'},{item:'Banana',amount:'half'},{item:'Granola',amount:'25g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Full Cooked Breakfast + Shake',cals:590,p:48,c:36,f:24,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Turkey rashers',amount:'4'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Mushrooms',amount:'80g'},{item:'Whey protein',amount:'half scoop'},{item:'Milk',amount:'150ml'}],
+      method:'Grill or pan-fry turkey rashers over medium-high heat for 3-4 minutes per side. Air fryer option: 190°C for 8 mins. Cook sliced mushrooms in a pan with a little oil for 3-4 minutes. Scramble eggs in a separate non-stick pan over medium-low heat. Toast the bread. Blend protein powder with milk for the shake. Plate up the cooked breakfast and drink the shake alongside.'},
+    lunch:{name:'Tuna, Egg & Potato Salad',cals:620,p:50,c:50,f:16,
+      ingredients:[{item:'Tuna in spring water',amount:'180g'},{item:'Eggs (hard boiled)',amount:'2'},{item:'New potatoes (cooked)',amount:'160g'},{item:'Green beans',amount:'80g'},{item:'Mixed leaves',amount:'50g'},{item:'Olive oil',amount:'2 tsp'},{item:'Lemon juice',amount:'1 tbsp'}],
+      method:'Boil potatoes in salted water for 15 minutes until tender. Boil eggs for 10 minutes, cool in cold water and peel. Blanch green beans in boiling water for 3-4 minutes, drain and cool. Drain the tuna. Arrange leaves in a bowl, add halved potatoes, quartered eggs, green beans and flaked tuna. Drizzle with olive oil and lemon juice.'},
+    dinner:{name:'Chicken Thighs, Rice & Veg',cals:630,p:52,c:50,f:18,
+      ingredients:[{item:'Chicken thighs (skinless)',amount:'210g'},{item:'Brown rice (cooked)',amount:'150g'},{item:'Peppers',amount:'100g'},{item:'Red onion',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Smoked paprika',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Slice peppers and onion into chunks and toss with olive oil, paprika, salt and pepper. Spread on a baking tray. Season the chicken thighs and place on top of the veg. Roast at 200°C for 30-35 minutes until the chicken is golden and juices run clear. Air fryer option: 190°C for 20-22 mins, shaking halfway. Slice the chicken and serve with rice and roasted veg.'},
+    snack:{name:'Cottage Cheese, Nuts & Toast',cals:370,p:28,c:30,f:14,
+      ingredients:[{item:'Cottage cheese',amount:'220g'},{item:'Mixed nuts',amount:'25g'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Cucumber',amount:'60g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Salmon Scramble & Porridge',cals:580,p:44,c:44,f:20,
+      ingredients:[{item:'Smoked salmon',amount:'80g'},{item:'Eggs',amount:'2'},{item:'Rolled oats',amount:'60g'},{item:'Milk',amount:'180ml'},{item:'Banana',amount:'half'},{item:'Spinach',amount:'40g'}],
+      method:'Cook oats in milk in a saucepan over medium heat for 4-5 minutes, stirring regularly. Serve with sliced banana. Whisk eggs with salt and pepper. Wilt spinach in a dry pan for 30 seconds. Heat a little oil in a non-stick pan and scramble the eggs slowly over medium-low heat. Fold in the salmon off the heat. Serve the egg and salmon mixture alongside the porridge.'},
+    lunch:{name:'Turkey Stir-Fry & Noodles',cals:630,p:52,c:52,f:16,
+      ingredients:[{item:'Turkey breast (strips)',amount:'200g'},{item:'Rice noodles (cooked)',amount:'140g'},{item:'Pak choi',amount:'80g'},{item:'Mushrooms',amount:'60g'},{item:'Soy sauce',amount:'2 tbsp'},{item:'Sesame oil',amount:'1.5 tsp'}],
+      method:'Soak noodles in boiling water for 5 minutes, drain. Heat a wok over high heat with a little oil. Add turkey strips — spread out and cook for 2 minutes without moving to get colour. Stir-fry for 2-3 minutes more until cooked through. Remove. In the same wok, cook mushrooms for 2 minutes, add pak choi and stir-fry for 2 minutes. Return turkey, pour in soy sauce and sesame oil, add noodles and toss everything together for 1 minute.'},
+    dinner:{name:'Cod, Sweet Potato & Bean Stew',cals:620,p:50,c:52,f:14,
+      ingredients:[{item:'Cod fillet',amount:'210g'},{item:'Sweet potato',amount:'150g'},{item:'Cannellini beans',amount:'100g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Paprika & garlic',amount:'1 tsp each'}],
+      method:'Dice the sweet potato. Heat oil in a pan over medium heat, add minced garlic and paprika, cook for 30 seconds. Add sweet potato, tinned tomatoes and beans. Stir, bring to a simmer and cook for 15 minutes until sweet potato is nearly tender. Season the cod and place on top of the stew. Cover with a lid and cook for 10 minutes until the cod is flaked and cooked through. Air fryer option: air fry cod separately at 200°C for 8-9 mins, then serve over the stew. Stir in spinach at the end.'},
+    snack:{name:'Protein Yoghurt & Fruit',cals:380,p:30,c:36,f:8,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'260g'},{item:'Mixed berries',amount:'100g'},{item:'Granola',amount:'30g'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  }
+],
+
+// ═══════════════════════════════════════
+// MEAT — 2600 kcal
+// ═══════════════════════════════════════
+meat_2600: [
+  {
+    breakfast:{name:'Loaded Salmon Breakfast',cals:640,p:48,c:40,f:30,
+      ingredients:[{item:'Eggs',amount:'4'},{item:'Smoked salmon',amount:'100g'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'70g'},{item:'Spinach',amount:'50g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Mash avocado with salt, pepper and lemon juice. Toast the bread. Wilt spinach in a dry pan. Whisk eggs with salt and pepper, scramble slowly in a non-stick pan with olive oil over medium-low heat until just set. Spread avocado on toast, top with spinach. Serve eggs and salmon alongside.'},
+    lunch:{name:'Chicken, Rice & Double Veg',cals:680,p:58,c:60,f:17,
+      ingredients:[{item:'Chicken breast',amount:'220g'},{item:'Brown rice (cooked)',amount:'170g'},{item:'Broccoli',amount:'100g'},{item:'Bell pepper',amount:'100g'},{item:'Courgette',amount:'80g'},{item:'Olive oil',amount:'2 tsp'},{item:'Soy sauce',amount:'2 tbsp'}],
+      method:'Cook rice per packet instructions. Season chicken with salt, pepper and garlic powder. Cook on a griddle pan over medium-high heat, 5-6 minutes per side. Rest and slice. Toss all veg in olive oil and salt. Roast at 200°C for 20-25 mins or air fry at 190-200°C for 10-12 mins. Assemble bowl, drizzle with soy sauce.'},
+    dinner:{name:'Salmon & Quinoa Power Bowl',cals:670,p:52,c:52,f:24,
+      ingredients:[{item:'Salmon fillet',amount:'220g'},{item:'Quinoa (cooked)',amount:'160g'},{item:'Asparagus',amount:'100g'},{item:'Avocado',amount:'50g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Lemon',amount:'half'}],
+      method:'Cook quinoa per packet instructions. Toss asparagus in olive oil and salt, roast at 200°C for 10-12 mins or air fry at 190°C for 6 mins. Season salmon. Heat oil in a pan, cook skin-side down for 3-4 mins until crispy, flip and finish in oven at 200°C for 4-5 mins. Air fryer option: 200°C for 10 mins. Wilt spinach in a dry pan. Slice avocado. Assemble bowl with quinoa, spinach, asparagus, avocado and salmon. Squeeze lemon over the top.'},
+    snack:{name:'Protein Shake & Nuts',cals:400,p:36,c:30,f:16,
+      ingredients:[{item:'Whey protein',amount:'2 scoops'},{item:'Milk',amount:'300ml'},{item:'Banana',amount:'half'},{item:'Mixed nuts',amount:'25g'}],
+      method:'Blend protein, milk and banana for 30-45 seconds until smooth. Eat nuts on the side.'}
+  },
+  {
+    breakfast:{name:'Turkey, Egg & Porridge',cals:620,p:48,c:52,f:16,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Turkey breast (sliced)',amount:'80g'},{item:'Rolled oats',amount:'80g'},{item:'Milk',amount:'250ml'},{item:'Banana',amount:'half'},{item:'Almond butter',amount:'1 tsp'}],
+      method:'Cook oats in milk over medium heat for 4-5 minutes, stirring regularly until thick. Stir in almond butter. Serve with sliced banana. Whisk eggs with salt and pepper. Heat a little oil in a non-stick pan, add turkey slices to warm through for 1 minute, then pour in eggs and scramble gently over medium-low heat until just set. Serve the egg and turkey alongside the porridge.'},
+    lunch:{name:'Beef, Lentil & Sweet Potato Bowl',cals:680,p:56,c:56,f:16,
+      ingredients:[{item:'Lean beef mince (5%)',amount:'190g'},{item:'Green lentils (cooked)',amount:'120g'},{item:'Sweet potato',amount:'140g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Cumin & paprika',amount:'1 tsp each'}],
+      method:'Dice the sweet potato and toss in olive oil, cumin, paprika, salt and pepper. Roast at 200°C for 25 minutes or air fry at 200°C for 15 mins. Heat a pan over high heat, add mince and break it up. Cook for 5-6 minutes until well browned, season. Air fryer option: in a foil parcel at 200°C for 10 mins. Drain and rinse lentils. Add lentils to the pan and stir. Wilt spinach in. Combine everything in a bowl.'},
+    dinner:{name:'Prawn Curry, Rice & Naan',cals:660,p:48,c:60,f:20,
+      ingredients:[{item:'King prawns',amount:'240g'},{item:'Brown rice (cooked)',amount:'160g'},{item:'Light coconut milk',amount:'120ml'},{item:'Spinach',amount:'60g'},{item:'Onion',amount:'half'},{item:'Curry paste',amount:'1.5 tbsp'},{item:'Mini wholegrain naan',amount:'1'}],
+      method:'Cook rice per packet instructions. Warm the naan in a dry pan or oven for 3-4 minutes. Dice the onion and cook in oil over medium heat for 3-4 minutes until soft. Add curry paste, stir for 1 minute until fragrant. Pour in coconut milk, bring to a gentle simmer. Add prawns and cook for 4-5 minutes, stirring, until pink and cooked through. Stir in spinach until wilted. Season and serve over rice with warm naan.'},
+    snack:{name:'Big Cottage Cheese Bowl',cals:400,p:34,c:34,f:12,
+      ingredients:[{item:'Cottage cheese',amount:'250g'},{item:'Banana',amount:'1 small'},{item:'Mixed nuts',amount:'20g'},{item:'Honey',amount:'1 tsp'},{item:'Chia seeds',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Full Cooked Breakfast',cals:640,p:50,c:36,f:28,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Turkey rashers',amount:'5'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Mushrooms',amount:'80g'},{item:'Tomatoes',amount:'80g'},{item:'Spinach',amount:'50g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Grill or pan-fry turkey rashers over medium-high heat for 3-4 minutes per side until crispy. Air fryer option: 190°C for 8-10 mins. Halve the tomatoes and cook in the pan for 2 minutes. Cook sliced mushrooms in a little oil for 3-4 minutes until golden. Wilt spinach for 30 seconds in a dry pan. Scramble eggs in a non-stick pan over medium-low heat. Toast the bread. Plate everything up together.'},
+    lunch:{name:'Chicken, Pasta & Pesto',cals:670,p:54,c:54,f:18,
+      ingredients:[{item:'Chicken breast',amount:'210g'},{item:'Wholewheat pasta (cooked)',amount:'150g'},{item:'Pesto',amount:'20g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Parmesan',amount:'20g'},{item:'Spinach',amount:'60g'}],
+      method:'Cook pasta per packet instructions, drain and reserve a splash of pasta water. Season the chicken and cook on a griddle pan or pan-fry over medium-high heat, 5-6 minutes per side until cooked through. Air fryer option: 190°C for 12 mins. Rest and slice. In the same pan, add the tomatoes and cook for 1 minute. Add spinach and wilt for 30 seconds. Toss pasta with pesto, a splash of pasta water, tomatoes and spinach. Top with sliced chicken and grated parmesan.'},
+    dinner:{name:'Beef & Brown Rice Stir-Fry',cals:660,p:54,c:52,f:18,
+      ingredients:[{item:'Lean beef strips',amount:'200g'},{item:'Brown rice (cooked)',amount:'160g'},{item:'Tenderstem broccoli',amount:'100g'},{item:'Snap peas',amount:'60g'},{item:'Soy sauce',amount:'2.5 tbsp'},{item:'Sesame oil',amount:'2 tsp'},{item:'Ginger & garlic',amount:'1 tsp each'}],
+      method:'Cook rice per packet instructions. Heat wok over very high heat. Add oil, spread beef out in a single layer, leave for 1 minute for colour, then stir-fry for 2-3 minutes until browned. Remove. Air fryer option: 200°C for 8 mins. In the same wok, stir-fry broccoli and snap peas for 3 minutes. Add ginger and garlic, cook for 30 seconds. Return beef, add soy sauce and sesame oil, toss everything together for 1 minute. Serve over rice.'},
+    snack:{name:'Protein Yoghurt & Fruit',cals:420,p:34,c:38,f:11,
+      ingredients:[{item:'Skyr',amount:'250g'},{item:'Whey protein',amount:'half scoop'},{item:'Mixed berries',amount:'100g'},{item:'Granola',amount:'30g'}],
+      method:'Mix protein powder into skyr until smooth. Top with berries and granola.'}
+  },
+  {
+    breakfast:{name:'Smoked Mackerel & Egg Toast + Shake',cals:630,p:50,c:40,f:26,
+      ingredients:[{item:'Smoked mackerel',amount:'110g'},{item:'Eggs (poached)',amount:'2'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'50g'},{item:'Whey protein',amount:'half scoop'},{item:'Milk',amount:'200ml'}],
+      method:'Mash avocado with salt and lemon juice. Toast the bread. Flake mackerel. Bring a pan of water to a gentle simmer with a splash of vinegar. Create a swirl and slide the eggs in from small cups. Poach for 3-4 minutes. Spread avocado on toast, top with mackerel and poached eggs. Blend protein and milk separately for the shake.'},
+    lunch:{name:'Turkey, Quinoa & Roasted Veg',cals:670,p:56,c:52,f:17,
+      ingredients:[{item:'Turkey breast',amount:'210g'},{item:'Quinoa (cooked)',amount:'150g'},{item:'Peppers',amount:'100g'},{item:'Courgette',amount:'80g'},{item:'Red onion',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Herbs',amount:'to taste'}],
+      method:'Cook quinoa per packet instructions. Slice peppers, courgette and onion, toss in olive oil, herbs, salt and pepper. Roast at 200°C for 20-25 mins or air fry at 190-200°C for 10-12 mins. Season turkey with salt, pepper and garlic powder. Cook on a griddle pan or air fry at 190°C for 14-16 mins. Rest and slice. Assemble bowl with quinoa, roasted veg and sliced turkey.'},
+    dinner:{name:'Chicken Thigh, Potato & Greens',cals:660,p:54,c:52,f:20,
+      ingredients:[{item:'Chicken thighs (skinless)',amount:'220g'},{item:'New potatoes',amount:'180g'},{item:'Asparagus',amount:'100g'},{item:'Green beans',amount:'80g'},{item:'Olive oil',amount:'2 tsp'},{item:'Garlic & paprika',amount:'1 tsp each'}],
+      method:'Preheat oven to 200°C. Halve the potatoes and toss in olive oil, paprika, garlic powder, salt and pepper. Spread on a baking tray. Season the chicken thighs and place on top. Roast for 25 minutes. Add the asparagus and green beans to the tray, toss in the oil and roast for a further 10 minutes until everything is golden and cooked through. Air fryer option: chicken and potatoes at 190-200°C for 20 mins, add veg for final 5 mins.'},
+    snack:{name:'Tuna, Cottage Cheese & Rice Cakes',cals:400,p:40,c:28,f:10,
+      ingredients:[{item:'Tuna in spring water',amount:'160g'},{item:'Cottage cheese',amount:'150g'},{item:'Rice cakes',amount:'4'},{item:'Cucumber',amount:'80g'}],
+      method:'No cooking needed. Drain tuna, mix with cottage cheese and black pepper, spoon onto rice cakes.'}
+  },
+  {
+    breakfast:{name:'Salmon & Porridge Combo',cals:630,p:48,c:50,f:22,
+      ingredients:[{item:'Smoked salmon',amount:'90g'},{item:'Eggs (scrambled)',amount:'2'},{item:'Rolled oats',amount:'70g'},{item:'Milk',amount:'220ml'},{item:'Banana',amount:'half'},{item:'Almond butter',amount:'1 tsp'}],
+      method:'Cook oats in milk over medium heat for 4-5 minutes, stirring regularly. Stir in almond butter and serve with banana. Whisk eggs with salt and pepper. Heat a little oil in a non-stick pan and scramble slowly over medium-low heat until just set. Serve eggs with the salmon alongside the porridge.'},
+    lunch:{name:'Cod, Lentils & Sweet Potato',cals:660,p:54,c:54,f:16,
+      ingredients:[{item:'Cod fillet',amount:'220g'},{item:'Green lentils (cooked)',amount:'130g'},{item:'Sweet potato',amount:'150g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Paprika & lemon',amount:'to taste'}],
+      method:'Dice sweet potato and toss in olive oil, paprika, salt and pepper. Roast at 200°C for 25 mins or air fry at 200°C for 15 mins. Drain and rinse lentils. Warm in a pan with olive oil for 2 minutes, add spinach and stir until wilted. Season the cod with paprika, salt and pepper. Bake at 200°C for 12-15 mins until it flakes easily. Air fryer option: 200°C for 8-9 mins. Plate up lentils, sweet potato and cod with a squeeze of lemon.'},
+    dinner:{name:'Chicken Meatballs, Pasta & Sauce',cals:660,p:54,c:52,f:18,
+      ingredients:[{item:'Chicken mince',amount:'210g'},{item:'Wholewheat pasta (cooked)',amount:'150g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Onion & garlic',amount:'to taste'},{item:'Italian herbs',amount:'1 tsp'},{item:'Parmesan',amount:'20g'},{item:'Olive oil',amount:'1.5 tsp'}],
+      method:'Mix chicken mince with salt, pepper and herbs. Roll into 10-12 small balls. Cook in a pan over medium heat for 8-10 minutes, turning regularly until golden. Air fryer option: 190°C for 10 mins. Remove meatballs. Soften diced onion in the pan for 3 minutes, add garlic for 1 minute. Add tinned tomatoes, season and simmer for 5 minutes. Return meatballs, cover and cook for 10 minutes. Cook pasta, drain and toss with sauce. Top with grated parmesan.'},
+    snack:{name:'Big Protein Bowl',cals:400,p:34,c:36,f:11,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'260g'},{item:'Whey protein',amount:'half scoop'},{item:'Mixed berries',amount:'100g'},{item:'Granola',amount:'30g'},{item:'Honey',amount:'1 tsp'}],
+      method:'Mix protein powder into yoghurt until smooth. Top with fruit and granola.'}
+  }
+],
+
+// ═══════════════════════════════════════
+// VEGGIE — 1400 kcal
+// ═══════════════════════════════════════
+veggie_1400: [
+  {
+    breakfast:{name:'Greek Yoghurt & Egg Scramble',cals:340,p:28,c:22,f:14,
+      ingredients:[{item:'Eggs',amount:'2'},{item:'Egg whites',amount:'2'},{item:'Greek yoghurt (0%)',amount:'100g'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Spinach',amount:'40g'},{item:'Cherry tomatoes',amount:'50g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Halve the cherry tomatoes. Whisk eggs and egg whites together with salt and pepper. Heat olive oil in a non-stick pan over medium heat. Add tomatoes and cook for 1 minute until they start to blister. Add spinach and stir for 30 seconds until wilted. Pour in the egg mixture and stir gently until just set. Serve on toast with a dollop of Greek yoghurt on the side.'},
+    lunch:{name:'Chickpea & Quinoa Bowl',cals:380,p:20,c:50,f:10,
+      ingredients:[{item:'Chickpeas (drained)',amount:'150g'},{item:'Quinoa (cooked)',amount:'100g'},{item:'Roasted peppers',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Lemon juice',amount:'1 tbsp'},{item:'Olive oil',amount:'1 tsp'},{item:'Cumin',amount:'1 tsp'}],
+      method:'Cook quinoa per packet instructions. Drain and rinse the chickpeas. Toss in olive oil, cumin and a pinch of salt. Roast at 200°C for 20-25 minutes until crispy on the outside. Air fryer option: 200°C for 12-15 mins, shaking halfway. Slice the roasted peppers. Build the bowl — quinoa, spinach, chickpeas, peppers. Dress with lemon juice.'},
+    dinner:{name:'Lentil & Vegetable Dahl',cals:370,p:22,c:50,f:9,
+      ingredients:[{item:'Red lentils (dried)',amount:'80g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Spinach',amount:'60g'},{item:'Onion',amount:'half'},{item:'Garlic',amount:'2 cloves'},{item:'Coconut milk (light)',amount:'60ml'},{item:'Curry powder',amount:'2 tsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Dice the onion finely and mince the garlic. Heat olive oil in a pan over medium heat. Cook the onion for 3-4 minutes until softened and translucent. Add the garlic and curry powder, stir for 1 minute until fragrant. Add the dry lentils, tinned tomatoes and 300ml water. Bring to a boil, reduce heat and simmer for 20-25 minutes, stirring occasionally, until lentils are completely soft. Stir in coconut milk and spinach, cook for 2 more minutes. Season with salt.'},
+    snack:{name:'Cottage Cheese & Almonds',cals:200,p:16,c:12,f:9,
+      ingredients:[{item:'Cottage cheese',amount:'150g'},{item:'Almonds',amount:'15g'},{item:'Berries',amount:'60g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Tofu Scramble on Toast',cals:340,p:24,c:26,f:14,
+      ingredients:[{item:'Firm tofu',amount:'150g'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Spinach',amount:'50g'},{item:'Turmeric',amount:'half tsp'},{item:'Nutritional yeast',amount:'1 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Press the tofu between paper towels for 5 minutes to remove excess moisture, then crumble it into rough chunks. Heat olive oil in a pan over medium-high heat. Add the tofu and spread it out — don\'t stir for 2 minutes so it starts to brown. Add turmeric and nutritional yeast, stir and cook for 3-4 more minutes until golden. Add spinach and stir until wilted. Season with salt and pepper. Air fryer option: spread crumbled tofu on a foil tray, air fry at 200°C for 10 mins, then toss with spices. Serve on toast.'},
+    lunch:{name:'Edamame & Brown Rice Bowl',cals:380,p:22,c:48,f:10,
+      ingredients:[{item:'Edamame (shelled)',amount:'120g'},{item:'Brown rice (cooked)',amount:'110g'},{item:'Cucumber',amount:'60g'},{item:'Avocado',amount:'40g'},{item:'Soy sauce',amount:'1 tbsp'},{item:'Sesame oil',amount:'1 tsp'},{item:'Spring onions',amount:'2'}],
+      method:'Cook rice per packet instructions. If edamame is frozen, microwave in a bowl with 2 tbsp water for 2-3 minutes, or boil for 3-4 minutes, then drain. Dice cucumber and avocado. Slice spring onions. Assemble the bowl with rice, edamame, cucumber, avocado and spring onions. Drizzle with soy sauce and sesame oil.'},
+    dinner:{name:'Egg Fried Rice',cals:370,p:20,c:46,f:12,
+      ingredients:[{item:'Eggs',amount:'2'},{item:'Brown rice (cooked)',amount:'100g'},{item:'Frozen peas',amount:'60g'},{item:'Carrot',amount:'60g'},{item:'Soy sauce',amount:'1.5 tbsp'},{item:'Sesame oil',amount:'1 tsp'},{item:'Spring onions',amount:'2'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Grate or finely dice the carrot. Use day-old cooked rice if possible — fresh rice can go mushy. Heat a wok over high heat with a splash of oil. Add the carrot and peas, stir-fry for 2-3 minutes. Push everything to the sides. Add a little more oil to the centre, crack in the eggs and scramble them quickly. Once just set, mix with the veg and rice. Add soy sauce and sesame oil, toss everything together over high heat for 1-2 minutes. Finish with sliced spring onions.'},
+    snack:{name:'Greek Yoghurt & Seeds',cals:200,p:14,c:16,f:8,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'150g'},{item:'Mixed seeds',amount:'15g'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Protein Porridge',cals:340,p:24,c:38,f:9,
+      ingredients:[{item:'Rolled oats',amount:'60g'},{item:'Milk (semi-skimmed)',amount:'200ml'},{item:'Greek yoghurt',amount:'80g'},{item:'Banana',amount:'half'},{item:'Almond butter',amount:'1 tsp'}],
+      method:'Add oats and milk to a saucepan over medium heat. Stir frequently for 4-5 minutes until thick and creamy. Remove from heat and stir in the Greek yoghurt — this keeps it creamy and adds protein. Serve with sliced banana on top and stir in almond butter.'},
+    lunch:{name:'Black Bean & Veggie Wrap',cals:380,p:20,c:46,f:11,
+      ingredients:[{item:'Black beans (drained)',amount:'120g'},{item:'Wholegrain wrap',amount:'1 medium'},{item:'Avocado',amount:'40g'},{item:'Salsa',amount:'2 tbsp'},{item:'Lettuce',amount:'40g'},{item:'Feta',amount:'20g'},{item:'Lime juice',amount:'1 tsp'}],
+      method:'Drain and rinse the black beans. Warm them in a small pan for 2 minutes with a pinch of cumin and salt, or microwave for 1 minute. Mash the avocado with lime juice and salt. Warm the wrap in a dry pan for 20 seconds. Spread mashed avocado across the middle, top with black beans, lettuce, crumbled feta and a spoonful of salsa. Fold in the sides and roll tightly.'},
+    dinner:{name:'Paneer & Chickpea Curry',cals:370,p:22,c:38,f:14,
+      ingredients:[{item:'Paneer',amount:'80g'},{item:'Chickpeas (drained)',amount:'100g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Onion',amount:'half'},{item:'Spinach',amount:'60g'},{item:'Curry paste (mild)',amount:'1 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cut the paneer into 2cm cubes. Heat a little oil in a pan over medium-high heat and cook the paneer cubes for 2-3 minutes per side until golden. Air fryer option: air fry at 200°C for 6-8 mins, turning halfway. Remove and set aside. In the same pan, fry diced onion for 3 minutes. Add curry paste and stir for 1 minute. Add tinned tomatoes and chickpeas, simmer for 10 minutes. Return paneer and stir in spinach until wilted. Season with salt.'},
+    snack:{name:'Boiled Eggs & Fruit',cals:200,p:14,c:16,f:8,
+      ingredients:[{item:'Eggs (hard boiled)',amount:'2'},{item:'Apple',amount:'1 small'}],
+      method:'Boil eggs for 10 minutes, cool in cold water before peeling.'}
+  },
+  {
+    breakfast:{name:'Smashed Avocado & Egg Toast',cals:340,p:18,c:26,f:18,
+      ingredients:[{item:'Eggs (poached)',amount:'2'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'50g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Feta',amount:'20g'},{item:'Chilli flakes',amount:'pinch'}],
+      method:'Toast the bread. Mash avocado with salt, pepper and a squeeze of lemon. Bring a pan of water to a gentle simmer with a splash of vinegar. Create a swirl and slide each egg in from a small cup. Poach for 3-4 minutes. Spread mashed avocado on toast. Top with halved cherry tomatoes, crumbled feta and a pinch of chilli flakes. Add the poached eggs on top.'},
+    lunch:{name:'Lentil Soup & Bread',cals:370,p:20,c:48,f:8,
+      ingredients:[{item:'Green lentils (dried)',amount:'80g'},{item:'Carrot',amount:'80g'},{item:'Celery',amount:'40g'},{item:'Onion',amount:'half'},{item:'Vegetable stock',amount:'600ml'},{item:'Cumin & coriander',amount:'1 tsp each'},{item:'Wholegrain bread',amount:'1 slice'}],
+      method:'Dice the onion, carrot and celery. Heat a little oil in a saucepan over medium heat. Cook the onion for 3 minutes until soft. Add carrot and celery, cook for 2 more minutes. Add cumin and coriander, stir for 30 seconds. Add the dry lentils and vegetable stock. Bring to a boil, then reduce heat and simmer for 25-30 minutes until lentils are completely soft. Use a hand blender to partially blend for a thicker texture if you prefer. Season well. Serve with bread.'},
+    dinner:{name:'Veggie Stir-Fry & Tofu',cals:380,p:24,c:36,f:14,
+      ingredients:[{item:'Firm tofu',amount:'150g'},{item:'Brown rice (cooked)',amount:'80g'},{item:'Tenderstem broccoli',amount:'80g'},{item:'Snap peas',amount:'60g'},{item:'Soy sauce',amount:'1.5 tbsp'},{item:'Sesame oil',amount:'1 tsp'},{item:'Ginger',amount:'1 tsp'}],
+      method:'Press tofu between paper towels for 5 minutes, then cut into 2cm cubes. Pan-fry in a little oil over high heat for 3-4 minutes per side until golden and crispy. Air fryer option: 200°C for 12 mins, turning halfway. Remove tofu. In the same pan or wok, stir-fry broccoli and snap peas over high heat for 3 minutes. Add ginger, pour in soy sauce and sesame oil. Return tofu, toss everything together for 1 minute. Serve over cooked rice.'},
+    snack:{name:'Cottage Cheese & Rice Cakes',cals:190,p:16,c:18,f:4,
+      ingredients:[{item:'Cottage cheese',amount:'150g'},{item:'Rice cakes',amount:'2'},{item:'Cucumber',amount:'60g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Overnight Oats',cals:330,p:20,c:38,f:9,
+      ingredients:[{item:'Rolled oats',amount:'60g'},{item:'Greek yoghurt (0%)',amount:'120g'},{item:'Milk',amount:'80ml'},{item:'Chia seeds',amount:'1 tsp'},{item:'Berries',amount:'60g'},{item:'Honey',amount:'1 tsp'}],
+      method:'The night before: add oats, yoghurt, milk and chia seeds to a jar. Stir well, cover and refrigerate overnight. In the morning, stir again and add a splash of milk if too thick. Top with fresh berries and a drizzle of honey.'},
+    lunch:{name:'Halloumi & Quinoa Salad',cals:390,p:22,c:34,f:16,
+      ingredients:[{item:'Halloumi',amount:'60g'},{item:'Quinoa (cooked)',amount:'100g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Cucumber',amount:'60g'},{item:'Spinach',amount:'40g'},{item:'Olive oil',amount:'1 tsp'},{item:'Lemon juice',amount:'1 tbsp'}],
+      method:'Cook quinoa per packet instructions. Slice the halloumi into 1cm pieces. Heat a dry frying pan or griddle over medium-high heat. Cook the halloumi for 2-3 minutes per side until golden with char marks — no oil needed. Air fryer option: 200°C for 5-6 mins per side. Halve the tomatoes and dice the cucumber. Assemble the salad with quinoa, spinach and chopped veg. Top with halloumi. Dress with olive oil and lemon juice.'},
+    dinner:{name:'Egg & Vegetable Frittata',cals:360,p:26,c:20,f:18,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Egg whites',amount:'2'},{item:'Courgette',amount:'80g'},{item:'Bell pepper',amount:'60g'},{item:'Spinach',amount:'50g'},{item:'Feta',amount:'25g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Dice the courgette and pepper. Whisk eggs and egg whites together and season. Heat olive oil in an oven-proof pan over medium heat. Cook the courgette and pepper for 3-4 minutes until slightly softened. Add spinach and stir until wilted. Pour the egg mixture over the vegetables. Crumble feta on top. Cook on the stovetop for 3-4 minutes until the edges are set, then transfer to the oven at 180°C for 8-10 minutes until puffed and golden. Air fryer option: pour into an oven-safe dish, air fry at 170°C for 10-12 mins.'},
+    snack:{name:'Skyr & Walnuts',cals:200,p:16,c:14,f:8,
+      ingredients:[{item:'Skyr',amount:'150g'},{item:'Walnuts',amount:'15g'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  }
+],
+
+// ═══════════════════════════════════════
+// VEGGIE — 1600 kcal
+// ═══════════════════════════════════════
+veggie_1600: [
+  {
+    breakfast:{name:'Big Egg & Toast Breakfast',cals:400,p:30,c:30,f:18,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Spinach',amount:'50g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Feta',amount:'25g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Toast the bread. Halve the tomatoes. Heat olive oil in a non-stick pan over medium heat. Add tomatoes and cook for 1 minute. Add spinach and stir until wilted. Whisk eggs with salt and pepper, pour into the pan and stir gently until just set. Crumble feta over the top. Serve on the toast.'},
+    lunch:{name:'Chickpea, Quinoa & Veg Bowl',cals:440,p:24,c:56,f:12,
+      ingredients:[{item:'Chickpeas (drained)',amount:'160g'},{item:'Quinoa (cooked)',amount:'110g'},{item:'Roasted peppers',amount:'80g'},{item:'Courgette',amount:'60g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Lemon & cumin',amount:'to taste'}],
+      method:'Cook quinoa per packet instructions. Drain and rinse chickpeas. Toss chickpeas and diced courgette in olive oil, cumin and salt. Roast at 200°C for 20-25 minutes until chickpeas are crispy and courgette is golden. Air fryer option: 200°C for 12-15 mins. Build the bowl with quinoa, spinach, roasted peppers, veg and chickpeas. Dress with lemon juice.'},
+    dinner:{name:'Paneer Curry & Brown Rice',cals:440,p:26,c:50,f:14,
+      ingredients:[{item:'Paneer',amount:'100g'},{item:'Brown rice (cooked)',amount:'110g'},{item:'Spinach',amount:'80g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Onion',amount:'half'},{item:'Curry paste',amount:'1 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Cut paneer into 2cm cubes and pan-fry in a little oil over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 6-8 mins. Remove and set aside. Fry diced onion in the same pan for 3 minutes. Add curry paste, stir for 1 minute. Add tinned tomatoes and simmer for 8 minutes. Return paneer, stir in spinach until wilted. Season and serve over rice.'},
+    snack:{name:'Greek Yoghurt, Nuts & Fruit',cals:240,p:18,c:22,f:9,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'180g'},{item:'Mixed nuts',amount:'15g'},{item:'Banana',amount:'half'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Tofu Scramble & Porridge',cals:400,p:28,c:42,f:12,
+      ingredients:[{item:'Firm tofu',amount:'130g'},{item:'Rolled oats',amount:'50g'},{item:'Milk',amount:'150ml'},{item:'Spinach',amount:'40g'},{item:'Turmeric',amount:'half tsp'},{item:'Banana',amount:'half'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook oats in milk over medium heat for 4-5 minutes, stirring regularly. Serve with banana. Press tofu between paper towels for 5 minutes, then crumble. Heat olive oil in a pan over medium-high heat. Add tofu, spread out and leave for 2 minutes to brown. Add turmeric, stir and cook for 3 more minutes. Add spinach and stir until wilted. Season with salt and pepper. Air fryer option: 200°C for 10 mins. Serve alongside the porridge.'},
+    lunch:{name:'Lentil & Sweet Potato Bowl',cals:430,p:22,c:56,f:10,
+      ingredients:[{item:'Green lentils (cooked)',amount:'150g'},{item:'Sweet potato',amount:'150g'},{item:'Spinach',amount:'60g'},{item:'Onion',amount:'half'},{item:'Olive oil',amount:'1 tsp'},{item:'Cumin & coriander',amount:'1 tsp each'}],
+      method:'Dice the sweet potato into 2cm cubes. Toss in olive oil, cumin, coriander, salt and pepper. Roast at 200°C for 25 minutes until golden and tender. Air fryer option: 200°C for 15 mins. Drain and rinse lentils if tinned. Warm in a pan with diced onion cooked in a little oil for 3 minutes, add the spices. Add lentils and stir for 2 minutes. Wilt the spinach in. Serve with the roasted sweet potato on top.'},
+    dinner:{name:'Egg Fried Rice + Edamame',cals:430,p:26,c:50,f:13,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Brown rice (cooked)',amount:'120g'},{item:'Edamame',amount:'80g'},{item:'Frozen peas',amount:'60g'},{item:'Soy sauce',amount:'2 tbsp'},{item:'Sesame oil',amount:'1 tsp'},{item:'Spring onions',amount:'2'}],
+      method:'If edamame is frozen, microwave for 2 minutes. Heat a wok over high heat with a splash of oil. Add peas and edamame, stir-fry for 2 minutes. Push to the sides, add a little oil to the centre, crack in the eggs and scramble quickly. Once just set, fold in with the veg and add the rice. Pour in soy sauce and sesame oil, toss everything together over high heat for 2 minutes. Finish with sliced spring onions.'},
+    snack:{name:'Cottage Cheese & Seeds',cals:230,p:18,c:16,f:9,
+      ingredients:[{item:'Cottage cheese',amount:'180g'},{item:'Chia seeds',amount:'1 tsp'},{item:'Berries',amount:'80g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Protein Porridge + Boiled Eggs',cals:400,p:30,c:40,f:12,
+      ingredients:[{item:'Rolled oats',amount:'70g'},{item:'Milk',amount:'220ml'},{item:'Greek yoghurt',amount:'80g'},{item:'Eggs (hard boiled)',amount:'2'},{item:'Banana',amount:'half'}],
+      method:'Bring eggs to the boil in cold water, cook for 10 minutes, cool in cold water and peel. Cook oats in milk over medium heat for 4-5 minutes, stirring regularly. Remove from heat, stir in Greek yoghurt. Serve with sliced banana. Eat the boiled eggs on the side with salt and pepper.'},
+    lunch:{name:'Black Bean & Rice Bowl',cals:430,p:22,c:54,f:11,
+      ingredients:[{item:'Black beans (drained)',amount:'150g'},{item:'Brown rice (cooked)',amount:'120g'},{item:'Avocado',amount:'40g'},{item:'Salsa',amount:'3 tbsp'},{item:'Lime juice',amount:'1 tbsp'},{item:'Coriander',amount:'handful'}],
+      method:'Cook rice per packet instructions. Drain and rinse black beans, warm in a small pan for 2 minutes with a pinch of cumin and salt. Slice the avocado. Build the bowl — rice, black beans, avocado, salsa. Squeeze lime juice over everything and top with fresh coriander.'},
+    dinner:{name:'Veggie Lentil Pasta',cals:430,p:24,c:52,f:12,
+      ingredients:[{item:'Red lentil pasta (cooked)',amount:'120g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Courgette',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Garlic',amount:'2 cloves'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Italian herbs',amount:'1 tsp'}],
+      method:'Cook pasta per packet instructions, drain. Dice the courgette. Heat olive oil in a pan over medium heat. Add garlic and cook for 30 seconds. Add courgette and cook for 4 minutes until golden. Pour in tinned tomatoes, add herbs and season. Simmer for 10 minutes until the sauce thickens. Add spinach and stir until wilted. Toss the cooked pasta through the sauce.'},
+    snack:{name:'Halloumi & Tomatoes',cals:240,p:16,c:8,f:17,
+      ingredients:[{item:'Halloumi',amount:'60g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Cucumber',amount:'60g'}],
+      method:'Slice halloumi. Heat a dry frying pan over medium-high heat. Cook halloumi for 2-3 minutes per side until golden. Air fryer option: 200°C for 5-6 mins per side. Serve with tomatoes and cucumber.'}
+  },
+  {
+    breakfast:{name:'Avocado Toast & Eggs',cals:400,p:24,c:28,f:20,
+      ingredients:[{item:'Eggs (poached)',amount:'2'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'60g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Feta',amount:'20g'}],
+      method:'Toast the bread. Mash avocado with salt, pepper and lemon juice. Bring a pan of water to a gentle simmer with a splash of vinegar. Create a gentle swirl, slide eggs in from small cups and poach for 3-4 minutes. Spread avocado on toast, top with halved tomatoes, crumbled feta and the poached eggs.'},
+    lunch:{name:'Halloumi & Roasted Veg Wrap',cals:440,p:22,c:44,f:17,
+      ingredients:[{item:'Halloumi',amount:'70g'},{item:'Wholegrain wrap',amount:'1 large'},{item:'Roasted peppers',amount:'80g'},{item:'Spinach',amount:'40g'},{item:'Hummus',amount:'30g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Slice the halloumi into strips. Cook in a dry pan over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 5-6 mins per side. Warm the wrap in a dry pan for 20 seconds. Spread hummus across the middle, add spinach, roasted peppers and halloumi strips. Roll tightly.'},
+    dinner:{name:'Chickpea & Lentil Stew',cals:430,p:26,c:52,f:10,
+      ingredients:[{item:'Chickpeas (drained)',amount:'120g'},{item:'Red lentils (dried)',amount:'60g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Spinach',amount:'60g'},{item:'Onion',amount:'half'},{item:'Garlic',amount:'2 cloves'},{item:'Cumin & paprika',amount:'1 tsp each'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Dice the onion. Heat olive oil in a pan over medium heat. Cook the onion for 3-4 minutes until softened. Add garlic, cumin and paprika, stir for 1 minute. Add the dry lentils, tinned tomatoes and 200ml water. Stir in the chickpeas. Bring to a boil, reduce heat and simmer for 25 minutes, stirring occasionally, until lentils are completely soft and the stew has thickened. Stir in spinach until wilted. Season well.'},
+    snack:{name:'Skyr & Granola',cals:240,p:20,c:24,f:7,
+      ingredients:[{item:'Skyr',amount:'180g'},{item:'Granola',amount:'25g'},{item:'Berries',amount:'60g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Overnight Oats with Seeds',cals:390,p:26,c:42,f:11,
+      ingredients:[{item:'Rolled oats',amount:'65g'},{item:'Greek yoghurt (0%)',amount:'130g'},{item:'Milk',amount:'80ml'},{item:'Chia seeds',amount:'1 tsp'},{item:'Flaxseeds',amount:'1 tsp'},{item:'Berries',amount:'60g'}],
+      method:'The night before: combine oats, yoghurt, milk, chia seeds and flaxseeds in a jar. Stir well, cover and refrigerate. In the morning, stir and add a splash more milk if too thick. Top with fresh berries.'},
+    lunch:{name:'Tofu & Veggie Stir-Fry',cals:430,p:26,c:42,f:15,
+      ingredients:[{item:'Firm tofu',amount:'160g'},{item:'Brown rice (cooked)',amount:'110g'},{item:'Tenderstem broccoli',amount:'80g'},{item:'Snap peas',amount:'60g'},{item:'Soy sauce',amount:'2 tbsp'},{item:'Sesame oil',amount:'1 tsp'},{item:'Ginger',amount:'1 tsp'}],
+      method:'Press tofu between paper towels, then cut into 2cm cubes. Pan-fry in oil over high heat for 3-4 minutes per side until golden and crispy. Air fryer option: 200°C for 12 mins, turning halfway. Remove. In the same pan or wok, stir-fry broccoli and snap peas over high heat for 3 minutes. Add ginger, pour in soy sauce and sesame oil. Return tofu, toss everything together for 1 minute. Serve over cooked rice.'},
+    dinner:{name:'Egg & Veg Frittata',cals:410,p:28,c:22,f:22,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Egg whites',amount:'2'},{item:'Courgette',amount:'80g'},{item:'Bell pepper',amount:'60g'},{item:'Spinach',amount:'50g'},{item:'Feta',amount:'30g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Dice the courgette and pepper. Whisk eggs and egg whites and season. Heat olive oil in an oven-proof pan over medium heat. Cook courgette and pepper for 3-4 minutes. Add spinach and stir until wilted. Pour in the egg mixture. Crumble feta over the top. Cook on the stovetop for 3-4 minutes until edges are set. Transfer to oven at 180°C for 8-10 minutes until puffed and cooked through. Air fryer option: pour into an oven-safe dish, air fry at 170°C for 10-12 mins.'},
+    snack:{name:'Cottage Cheese & Apple',cals:240,p:18,c:22,f:6,
+      ingredients:[{item:'Cottage cheese',amount:'200g'},{item:'Apple',amount:'1 medium'},{item:'Cinnamon',amount:'pinch'}],
+      method:'No cooking needed.'}
+  }
+],
+
+// ═══════════════════════════════════════
+// VEGGIE — 1800 kcal
+// ═══════════════════════════════════════
+veggie_1800: [
+  {
+    breakfast:{name:'Big Tofu Scramble & Toast',cals:450,p:32,c:36,f:18,
+      ingredients:[{item:'Firm tofu',amount:'160g'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Spinach',amount:'60g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Turmeric & nutritional yeast',amount:'1 tsp each'},{item:'Olive oil',amount:'1.5 tsp'}],
+      method:'Press tofu between paper towels for 5 minutes, then crumble into rough chunks. Toast the bread. Heat olive oil in a pan over medium-high heat. Add the tofu and spread it out — leave for 2 minutes without stirring so it browns on the bottom. Add turmeric and nutritional yeast, stir and cook for 3 more minutes until golden. Add halved cherry tomatoes and spinach, stir until spinach wilts. Season with salt, pepper and a pinch of garlic powder. Air fryer option: air fry tofu at 200°C for 10 mins, then toss with spices and add to pan with veg. Serve on toast.'},
+    lunch:{name:'Lentil, Quinoa & Roasted Veg',cals:490,p:28,c:58,f:13,
+      ingredients:[{item:'Green lentils (cooked)',amount:'150g'},{item:'Quinoa (cooked)',amount:'110g'},{item:'Roasted peppers',amount:'80g'},{item:'Courgette',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'},{item:'Lemon & cumin',amount:'to taste'}],
+      method:'Cook quinoa per packet instructions. Dice courgette and toss in olive oil, cumin, salt and pepper. Roast at 200°C for 20-25 minutes until golden. Air fryer option: 200°C for 10-12 mins. Drain and rinse lentils if tinned, warm in a pan with a little oil and cumin for 2 minutes. Build the bowl — quinoa, lentils, roasted courgette, roasted peppers, spinach. Squeeze lemon juice over everything.'},
+    dinner:{name:'Paneer & Chickpea Curry',cals:480,p:30,c:54,f:16,
+      ingredients:[{item:'Paneer',amount:'110g'},{item:'Chickpeas (drained)',amount:'120g'},{item:'Brown rice (cooked)',amount:'100g'},{item:'Spinach',amount:'60g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Curry paste',amount:'1.5 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Cut paneer into 2cm cubes and fry in oil over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 6-8 mins. Remove. Add curry paste to the pan and stir for 1 minute until fragrant. Add tinned tomatoes and chickpeas. Simmer for 10 minutes. Return paneer and stir in spinach until wilted. Season and serve over rice.'},
+    snack:{name:'Greek Yoghurt, Nuts & Banana',cals:280,p:20,c:28,f:10,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'200g'},{item:'Mixed nuts',amount:'20g'},{item:'Banana',amount:'half'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Egg & Avocado Toast + Yoghurt',cals:450,p:28,c:34,f:22,
+      ingredients:[{item:'Eggs (poached)',amount:'2'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'60g'},{item:'Feta',amount:'25g'},{item:'Greek yoghurt',amount:'80g'},{item:'Berries',amount:'50g'}],
+      method:'Toast the bread. Mash avocado with salt, pepper and lemon juice. Bring a pan of water to a gentle simmer with a splash of vinegar. Create a swirl, slide eggs in from small cups and poach for 3-4 minutes. Spread avocado on toast, top with crumbled feta and poached eggs. Serve Greek yoghurt with berries on the side.'},
+    lunch:{name:'Edamame, Rice & Miso Bowl',cals:480,p:28,c:56,f:12,
+      ingredients:[{item:'Edamame (shelled)',amount:'150g'},{item:'Brown rice (cooked)',amount:'130g'},{item:'Cucumber',amount:'60g'},{item:'Avocado',amount:'40g'},{item:'Miso paste',amount:'1 tbsp'},{item:'Soy sauce',amount:'1 tbsp'},{item:'Sesame oil',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Cook edamame — microwave frozen edamame with 2 tbsp water for 2-3 minutes, or boil for 3-4 minutes, then drain. Mix miso paste with 2 tbsp warm water until smooth, then add soy sauce and sesame oil to make the dressing. Dice cucumber and avocado. Build the bowl — rice, edamame, cucumber and avocado. Drizzle the miso dressing over the top.'},
+    dinner:{name:'Black Bean & Sweet Potato Bowl',cals:480,p:24,c:62,f:12,
+      ingredients:[{item:'Black beans (drained)',amount:'160g'},{item:'Sweet potato',amount:'160g'},{item:'Avocado',amount:'40g'},{item:'Salsa',amount:'3 tbsp'},{item:'Lime juice',amount:'1 tbsp'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Dice sweet potato into 2cm cubes. Toss in olive oil, a pinch of cumin, salt and pepper. Roast at 200°C for 25 minutes until golden. Air fryer option: 200°C for 15 mins. Drain and rinse black beans, warm in a pan for 2 minutes with a pinch of cumin. Slice avocado. Build the bowl — sweet potato, black beans, spinach, avocado and salsa. Squeeze lime juice over the top.'},
+    snack:{name:'Cottage Cheese, Seeds & Fruit',cals:280,p:22,c:22,f:9,
+      ingredients:[{item:'Cottage cheese',amount:'200g'},{item:'Mixed seeds',amount:'15g'},{item:'Apple',amount:'1 small'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Porridge + Eggs',cals:440,p:30,c:44,f:13,
+      ingredients:[{item:'Rolled oats',amount:'70g'},{item:'Milk',amount:'220ml'},{item:'Eggs (hard boiled)',amount:'2'},{item:'Greek yoghurt',amount:'60g'},{item:'Honey',amount:'1 tsp'}],
+      method:'Bring eggs to the boil in cold water, cook for 10 minutes, cool in cold water and peel. Cook oats in milk over medium heat for 4-5 minutes, stirring regularly until thick and creamy. Stir in Greek yoghurt and honey. Eat the boiled eggs on the side with salt and pepper.'},
+    lunch:{name:'Halloumi, Chickpea & Quinoa',cals:490,p:28,c:48,f:18,
+      ingredients:[{item:'Halloumi',amount:'70g'},{item:'Chickpeas (drained)',amount:'120g'},{item:'Quinoa (cooked)',amount:'110g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Lemon juice',amount:'1 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook quinoa per packet instructions. Drain and rinse chickpeas. Toss chickpeas in olive oil and a pinch of cumin. Roast at 200°C for 20 minutes or air fry at 200°C for 10 mins. Slice halloumi and cook in a dry pan over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 5-6 mins per side. Assemble bowl with quinoa, spinach, halved tomatoes, chickpeas and halloumi. Dress with lemon juice.'},
+    dinner:{name:'Tofu Stir-Fry & Noodles',cals:480,p:28,c:52,f:16,
+      ingredients:[{item:'Firm tofu',amount:'170g'},{item:'Rice noodles (cooked)',amount:'120g'},{item:'Tenderstem broccoli',amount:'80g'},{item:'Pak choi',amount:'60g'},{item:'Soy sauce',amount:'2 tbsp'},{item:'Sesame oil',amount:'1.5 tsp'},{item:'Ginger & garlic',amount:'1 tsp each'}],
+      method:'Press tofu between paper towels, cut into 2cm cubes. Pan-fry in oil over high heat for 3-4 minutes per side until golden. Air fryer option: 200°C for 12 mins, turning halfway. Soak noodles in boiling water for 5 minutes, drain. In a hot wok, stir-fry broccoli and pak choi for 3 minutes. Add ginger and garlic, cook for 30 seconds. Pour in soy sauce and sesame oil. Return tofu, add noodles and toss everything together for 1 minute.'},
+    snack:{name:'Skyr & Walnuts',cals:270,p:20,c:20,f:10,
+      ingredients:[{item:'Skyr',amount:'200g'},{item:'Walnuts',amount:'20g'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Egg Muffins & Fruit',cals:440,p:30,c:30,f:18,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Egg whites',amount:'2'},{item:'Spinach',amount:'50g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Feta',amount:'25g'},{item:'Berries',amount:'80g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Preheat oven to 180°C. Whisk eggs and egg whites together and season. Lightly oil a muffin tin. Divide chopped spinach and halved tomatoes between 4-5 cups. Pour egg mixture over, crumble feta on top. Bake for 15 minutes until puffed and golden. Air fryer option: pour into silicone muffin cups, air fry at 160°C for 10-12 mins. Serve with fresh berries on the side.'},
+    lunch:{name:'Lentil Soup & Crusty Bread',cals:470,p:24,c:58,f:10,
+      ingredients:[{item:'Red lentils (dried)',amount:'90g'},{item:'Carrot',amount:'80g'},{item:'Celery',amount:'60g'},{item:'Onion',amount:'half'},{item:'Veggie stock',amount:'600ml'},{item:'Cumin & coriander',amount:'1 tsp each'},{item:'Wholegrain bread',amount:'1 large slice'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Dice the onion, carrot and celery. Heat olive oil in a saucepan over medium heat. Cook onion for 3 minutes, add carrot and celery and cook for 2 more minutes. Add cumin and coriander and stir for 30 seconds. Add dry lentils and vegetable stock. Bring to a boil, then reduce heat and simmer for 25 minutes, stirring occasionally, until lentils are completely soft. Partially blend with a hand blender for a thicker texture. Season well. Serve with bread.'},
+    dinner:{name:'Veggie Pasta Bake',cals:480,p:26,c:56,f:14,
+      ingredients:[{item:'Wholewheat pasta (cooked)',amount:'130g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Courgette',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Mozzarella (light)',amount:'40g'},{item:'Garlic & herbs',amount:'to taste'},{item:'Olive oil',amount:'1.5 tsp'}],
+      method:'Preheat oven to 200°C. Cook pasta per packet instructions, drain. Dice the courgette. Heat olive oil in a pan, add minced garlic and cook for 30 seconds. Add courgette and cook for 3-4 minutes. Add tinned tomatoes and herbs, simmer for 5 minutes. Add spinach and stir until wilted. Combine the sauce with the cooked pasta and transfer to an oven-safe dish. Tear mozzarella on top. Bake for 20-25 minutes until golden and bubbling. Air fryer option: 180°C for 12-15 mins.'},
+    snack:{name:'Cottage Cheese & Pineapple',cals:270,p:20,c:26,f:5,
+      ingredients:[{item:'Cottage cheese',amount:'200g'},{item:'Pineapple chunks',amount:'80g'},{item:'Chia seeds',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Overnight Oats + Boiled Eggs',cals:440,p:30,c:44,f:13,
+      ingredients:[{item:'Rolled oats',amount:'65g'},{item:'Greek yoghurt (0%)',amount:'130g'},{item:'Milk',amount:'80ml'},{item:'Eggs (hard boiled)',amount:'2'},{item:'Berries',amount:'60g'},{item:'Chia seeds',amount:'1 tsp'}],
+      method:'The night before: combine oats, yoghurt, milk and chia seeds in a jar. Stir, cover and refrigerate. In the morning, stir and add a splash of milk if needed. Top with berries. Boil eggs for 10 minutes, cool in cold water before peeling. Eat the eggs on the side with salt and pepper.'},
+    lunch:{name:'Veggie Buddha Bowl',cals:480,p:26,c:52,f:16,
+      ingredients:[{item:'Chickpeas (drained)',amount:'130g'},{item:'Brown rice (cooked)',amount:'110g'},{item:'Roasted sweet potato',amount:'100g'},{item:'Avocado',amount:'40g'},{item:'Spinach',amount:'60g'},{item:'Tahini',amount:'1 tbsp'},{item:'Lemon juice',amount:'1 tbsp'}],
+      method:'Dice sweet potato and toss in olive oil, paprika, salt and pepper. Roast at 200°C for 25 minutes or air fry at 200°C for 15 mins. Drain and rinse chickpeas. Toss in oil and a pinch of cumin. Roast at 200°C for 20 minutes or air fry at 200°C for 12 mins until crispy. Mix tahini with lemon juice and a splash of water to make a dressing. Build the bowl — rice, spinach, sweet potato, chickpeas, avocado. Drizzle tahini dressing over the top.'},
+    dinner:{name:'Egg Fried Rice & Edamame',cals:470,p:28,c:50,f:15,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Brown rice (cooked)',amount:'120g'},{item:'Edamame',amount:'100g'},{item:'Frozen peas',amount:'60g'},{item:'Carrot',amount:'60g'},{item:'Soy sauce',amount:'2 tbsp'},{item:'Sesame oil',amount:'1 tsp'}],
+      method:'If edamame is frozen, microwave for 2 minutes. Grate or finely dice the carrot. Heat a wok over high heat with a splash of oil. Add carrot, peas and edamame, stir-fry for 2-3 minutes. Push to the sides, add a little more oil, crack in the eggs and scramble quickly. Once just set, mix everything together and add the rice. Pour in soy sauce and sesame oil, toss over high heat for 2 minutes until everything is hot and combined.'},
+    snack:{name:'Greek Yoghurt & Granola',cals:280,p:20,c:26,f:9,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'200g'},{item:'Granola',amount:'25g'},{item:'Mixed berries',amount:'60g'}],
+      method:'No cooking needed.'}
+  }
+],
+
+// ═══════════════════════════════════════
+// VEGGIE — 2000 kcal
+// ═══════════════════════════════════════
+veggie_2000: [
+  {
+    breakfast:{name:'Loaded Avocado & Egg Toast',cals:500,p:32,c:36,f:24,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'70g'},{item:'Feta',amount:'25g'},{item:'Spinach',amount:'50g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Toast the bread. Mash avocado with salt, pepper and lemon juice. Wilt spinach in a dry pan for 30 seconds. Whisk eggs with salt and pepper. Heat olive oil in a non-stick pan over medium heat. Add halved cherry tomatoes and cook for 1 minute. Pour in eggs and stir gently until just set. Spread avocado on toast, top with spinach and scrambled eggs, crumble feta over the top.'},
+    lunch:{name:'Paneer, Quinoa & Roasted Veg',cals:540,p:30,c:60,f:16,
+      ingredients:[{item:'Paneer',amount:'120g'},{item:'Quinoa (cooked)',amount:'140g'},{item:'Peppers',amount:'100g'},{item:'Courgette',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Cumin & coriander',amount:'1 tsp each'}],
+      method:'Cook quinoa per packet instructions. Dice the peppers and courgette. Toss in olive oil, cumin and salt. Roast at 200°C for 20-25 mins or air fry at 200°C for 10 mins. Cut paneer into 2cm cubes and pan-fry in a little oil over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 6-8 mins. Build the bowl — quinoa, spinach, roasted veg and paneer. Drizzle with a little olive oil.'},
+    dinner:{name:'Chickpea Curry & Brown Rice',cals:520,p:26,c:66,f:14,
+      ingredients:[{item:'Chickpeas (drained)',amount:'200g'},{item:'Brown rice (cooked)',amount:'130g'},{item:'Spinach',amount:'80g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Onion',amount:'half'},{item:'Curry paste',amount:'1.5 tbsp'},{item:'Light coconut milk',amount:'60ml'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Dice the onion and cook in oil over medium heat for 3-4 minutes until soft. Add curry paste and stir for 1 minute until fragrant. Pour in tinned tomatoes and coconut milk. Add chickpeas, stir and bring to a simmer. Cook for 12-15 minutes until the sauce has thickened and the chickpeas are soft. Stir in spinach until wilted. Season with salt. Serve over rice.'},
+    snack:{name:'Cottage Cheese, Fruit & Nuts',cals:300,p:22,c:24,f:11,
+      ingredients:[{item:'Cottage cheese',amount:'220g'},{item:'Mixed berries',amount:'80g'},{item:'Walnuts',amount:'20g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Protein Porridge + Eggs',cals:490,p:32,c:48,f:14,
+      ingredients:[{item:'Rolled oats',amount:'80g'},{item:'Milk',amount:'250ml'},{item:'Greek yoghurt',amount:'80g'},{item:'Eggs (hard boiled)',amount:'2'},{item:'Banana',amount:'half'},{item:'Almond butter',amount:'1 tsp'}],
+      method:'Bring eggs to the boil in cold water, cook for 10 minutes, then cool in cold water and peel. Cook oats in milk over medium heat for 4-5 minutes, stirring frequently until thick and creamy. Stir in Greek yoghurt and almond butter. Serve with sliced banana. Eat the boiled eggs on the side with salt and pepper.'},
+    lunch:{name:'Halloumi & Lentil Bowl',cals:530,p:30,c:54,f:18,
+      ingredients:[{item:'Halloumi',amount:'80g'},{item:'Green lentils (cooked)',amount:'150g'},{item:'Sweet potato',amount:'130g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Lemon & cumin',amount:'to taste'}],
+      method:'Dice sweet potato and toss in olive oil, cumin, salt and pepper. Roast at 200°C for 25 minutes or air fry at 200°C for 15 mins. Drain and rinse lentils, warm in a pan with olive oil and cumin for 2 minutes. Add spinach and wilt. Slice halloumi and cook in a dry pan over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 5-6 mins per side. Build the bowl — lentils, sweet potato, halloumi. Squeeze lemon juice over the top.'},
+    dinner:{name:'Tofu & Brown Rice Stir-Fry',cals:520,p:30,c:56,f:16,
+      ingredients:[{item:'Firm tofu',amount:'180g'},{item:'Brown rice (cooked)',amount:'140g'},{item:'Tenderstem broccoli',amount:'80g'},{item:'Pak choi',amount:'60g'},{item:'Soy sauce',amount:'2 tbsp'},{item:'Sesame oil',amount:'1.5 tsp'},{item:'Ginger & garlic',amount:'1 tsp each'}],
+      method:'Cook rice per packet instructions. Press tofu between paper towels, cut into 2cm cubes. Pan-fry in oil over high heat for 3-4 minutes per side until golden and crispy. Air fryer option: 200°C for 12 mins, turning halfway. Remove. In a hot wok, stir-fry broccoli and pak choi for 3 minutes. Add ginger and garlic, cook for 30 seconds. Pour in soy sauce and sesame oil. Return tofu and toss everything together for 1 minute. Serve over rice.'},
+    snack:{name:'Greek Yoghurt, Seeds & Granola',cals:320,p:22,c:30,f:11,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'220g'},{item:'Mixed seeds',amount:'15g'},{item:'Granola',amount:'25g'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Egg Muffins + Porridge',cals:490,p:32,c:46,f:16,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Spinach',amount:'50g'},{item:'Feta',amount:'25g'},{item:'Rolled oats',amount:'60g'},{item:'Milk',amount:'180ml'},{item:'Banana',amount:'half'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Preheat oven to 180°C. Whisk eggs and season. Oil 4 muffin cups. Divide spinach between the cups, pour egg over, crumble feta on top. Bake for 15 minutes. Air fryer option: pour into silicone cups, air fry at 160°C for 10-12 mins. Meanwhile cook oats in milk on the stovetop for 4-5 minutes, stirring regularly. Serve with banana. Eat the egg muffins on the side.'},
+    lunch:{name:'Chickpea & Avocado Bowl',cals:520,p:24,c:60,f:18,
+      ingredients:[{item:'Chickpeas (drained)',amount:'180g'},{item:'Brown rice (cooked)',amount:'130g'},{item:'Avocado',amount:'60g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Tahini',amount:'1 tbsp'},{item:'Lemon juice',amount:'1 tbsp'}],
+      method:'Cook rice per packet instructions. Drain and rinse chickpeas. Toss in olive oil and cumin, roast at 200°C for 20 minutes or air fry at 200°C for 12-15 mins until crispy. Mix tahini with lemon juice and a splash of water to make a dressing. Slice avocado and halve tomatoes. Build the bowl — rice, spinach, chickpeas, avocado, tomatoes. Drizzle tahini dressing over everything.'},
+    dinner:{name:'Lentil Bolognese & Pasta',cals:510,p:26,c:62,f:14,
+      ingredients:[{item:'Red lentils (dried)',amount:'90g'},{item:'Wholewheat pasta (cooked)',amount:'130g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Carrot',amount:'60g'},{item:'Onion',amount:'half'},{item:'Garlic',amount:'2 cloves'},{item:'Italian herbs',amount:'1 tsp'},{item:'Olive oil',amount:'1.5 tsp'}],
+      method:'Cook pasta per packet instructions. Finely dice the carrot and onion. Heat olive oil in a pan over medium heat. Cook onion for 3 minutes, add carrot and cook for 2 more minutes. Add minced garlic and herbs, stir for 30 seconds. Add the dry lentils and tinned tomatoes. Add 150ml water, stir and bring to a simmer. Cook for 25 minutes, stirring occasionally, until the lentils are completely soft and the sauce is thick. Season well. Toss with drained pasta.'},
+    snack:{name:'Skyr & Mixed Nuts',cals:310,p:22,c:24,f:12,
+      ingredients:[{item:'Skyr',amount:'220g'},{item:'Mixed nuts',amount:'25g'},{item:'Berries',amount:'60g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Tofu Scramble, Toast & Yoghurt',cals:490,p:32,c:40,f:18,
+      ingredients:[{item:'Firm tofu',amount:'160g'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Spinach',amount:'50g'},{item:'Turmeric',amount:'half tsp'},{item:'Greek yoghurt',amount:'100g'},{item:'Berries',amount:'60g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Press tofu between paper towels for 5 minutes, then crumble. Toast the bread. Heat olive oil in a pan over medium-high heat. Add tofu, spread and leave for 2 minutes to brown. Add turmeric and stir for 3 more minutes until golden. Add spinach and stir until wilted. Season. Air fryer option: crumbled tofu at 200°C for 10 mins, then toss with spices. Serve on toast. Greek yoghurt with berries on the side.'},
+    lunch:{name:'Halloumi Wrap & Salad',cals:520,p:26,c:50,f:20,
+      ingredients:[{item:'Halloumi',amount:'80g'},{item:'Wholegrain wrap',amount:'1 large'},{item:'Hummus',amount:'40g'},{item:'Roasted peppers',amount:'80g'},{item:'Spinach',amount:'40g'},{item:'Cherry tomatoes',amount:'60g'}],
+      method:'Slice halloumi into strips. Cook in a dry pan over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 5-6 mins per side. Warm the wrap in a dry pan for 20 seconds. Spread hummus down the middle. Add spinach, roasted peppers, halved tomatoes and halloumi strips. Roll tightly and slice in half.'},
+    dinner:{name:'Veggie Buddha Bowl',cals:510,p:26,c:60,f:16,
+      ingredients:[{item:'Chickpeas (drained)',amount:'150g'},{item:'Brown rice (cooked)',amount:'130g'},{item:'Roasted sweet potato',amount:'120g'},{item:'Avocado',amount:'50g'},{item:'Edamame',amount:'60g'},{item:'Tahini',amount:'1 tbsp'},{item:'Lemon juice',amount:'1 tbsp'}],
+      method:'Dice sweet potato and toss in olive oil and cumin. Roast at 200°C for 25 minutes or air fry at 200°C for 15 mins. Drain and rinse chickpeas, toss in oil and cumin, roast at 200°C for 20 minutes or air fry at 200°C for 12-15 mins until crispy. If edamame is frozen, microwave for 2 minutes. Mix tahini with lemon juice and a splash of water. Slice avocado. Build the bowl — rice, sweet potato, chickpeas, edamame, avocado. Drizzle with tahini dressing.'},
+    snack:{name:'Cottage Cheese & Crackers',cals:310,p:22,c:28,f:10,
+      ingredients:[{item:'Cottage cheese',amount:'220g'},{item:'Wholegrain crackers',amount:'5'},{item:'Cucumber',amount:'80g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Big Overnight Oats',cals:490,p:28,c:52,f:14,
+      ingredients:[{item:'Rolled oats',amount:'75g'},{item:'Greek yoghurt (0%)',amount:'150g'},{item:'Milk',amount:'100ml'},{item:'Chia seeds',amount:'1 tsp'},{item:'Almond butter',amount:'1 tsp'},{item:'Banana',amount:'half'},{item:'Berries',amount:'60g'}],
+      method:'The night before: combine oats, yoghurt, milk, chia seeds and almond butter in a jar. Stir well, cover and refrigerate overnight. In the morning, stir and add a splash more milk if too thick. Top with sliced banana and fresh berries.'},
+    lunch:{name:'Paneer & Black Bean Bowl',cals:530,p:30,c:56,f:16,
+      ingredients:[{item:'Paneer',amount:'110g'},{item:'Black beans (drained)',amount:'140g'},{item:'Brown rice (cooked)',amount:'120g'},{item:'Salsa',amount:'3 tbsp'},{item:'Avocado',amount:'40g'},{item:'Lime juice',amount:'1 tbsp'}],
+      method:'Cook rice per packet instructions. Cut paneer into 2cm cubes and pan-fry in oil over medium-high heat for 2-3 minutes per side until golden on all sides. Air fryer option: 200°C for 6-8 mins. Drain and rinse black beans, warm in a small pan with a pinch of cumin for 2 minutes. Slice avocado. Build the bowl — rice, black beans, paneer, avocado, salsa. Squeeze lime juice over the top.'},
+    dinner:{name:'Egg & Vegetable Frittata + Salad',cals:490,p:30,c:28,f:26,
+      ingredients:[{item:'Eggs',amount:'4'},{item:'Egg whites',amount:'2'},{item:'Courgette',amount:'80g'},{item:'Peppers',amount:'60g'},{item:'Spinach',amount:'60g'},{item:'Feta',amount:'35g'},{item:'Mixed salad',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'}],
+      method:'Dice the courgette and pepper. Whisk eggs and egg whites together and season well. Heat olive oil in an oven-proof pan over medium heat. Cook courgette and pepper for 3-4 minutes until slightly softened. Add spinach and stir until wilted. Pour in the egg mixture. Crumble feta over the top. Cook on the stovetop for 3-4 minutes until the edges set. Transfer to oven at 180°C for 10 minutes until puffed and cooked through. Air fryer option: pour into an oven-safe dish, air fry at 170°C for 10-12 mins. Serve with the mixed salad dressed with olive oil and lemon.'},
+    snack:{name:'Greek Yoghurt & Nuts',cals:310,p:22,c:24,f:12,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'220g'},{item:'Mixed nuts',amount:'25g'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  }
+],
+
+// ═══════════════════════════════════════
+// VEGGIE — 2200 kcal
+// ═══════════════════════════════════════
+veggie_2200: [
+  {
+    breakfast:{name:'Full Veggie Breakfast',cals:550,p:34,c:40,f:26,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'70g'},{item:'Spinach',amount:'50g'},{item:'Mushrooms',amount:'80g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'}],
+      method:'Toast the bread. Mash avocado with salt, pepper and lemon juice. Slice mushrooms and halve the tomatoes. Heat olive oil in a pan over medium heat. Cook mushrooms for 3-4 minutes until golden. Add tomatoes and cook for 1 minute. Add spinach and stir until wilted. Push to one side, add a little more oil and scramble the eggs over medium-low heat until just set. Spread avocado on toast. Serve eggs alongside the veg. Air fryer option: mushrooms and tomatoes at 190°C for 8 mins.'},
+    lunch:{name:'Paneer, Lentil & Brown Rice Bowl',cals:590,p:34,c:66,f:16,
+      ingredients:[{item:'Paneer',amount:'130g'},{item:'Green lentils (cooked)',amount:'140g'},{item:'Brown rice (cooked)',amount:'130g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Cumin & coriander',amount:'1 tsp each'}],
+      method:'Cook rice per packet instructions. Cut paneer into 2cm cubes. Pan-fry in oil over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 6-8 mins. Drain and rinse lentils. Warm in a pan with olive oil, cumin and coriander for 2 minutes. Wilt the spinach in. Build the bowl — rice, spiced lentils and spinach, topped with paneer cubes.'},
+    dinner:{name:'Chickpea & Sweet Potato Curry',cals:570,p:28,c:70,f:16,
+      ingredients:[{item:'Chickpeas (drained)',amount:'200g'},{item:'Sweet potato',amount:'170g'},{item:'Brown rice (cooked)',amount:'120g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Spinach',amount:'60g'},{item:'Curry paste',amount:'1.5 tbsp'},{item:'Light coconut milk',amount:'80ml'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Dice sweet potato into 2cm cubes. Heat oil in a pan, add curry paste and stir for 1 minute. Add sweet potato and stir to coat. Add tinned tomatoes, coconut milk and chickpeas. Bring to a boil, reduce heat and simmer for 20-25 minutes until sweet potato is completely tender. Air fryer option for sweet potato: toss in oil, air fry at 200°C for 15 mins, then add to sauce. Stir in spinach until wilted. Season with salt. Serve over rice.'},
+    snack:{name:'Skyr, Nuts & Banana',cals:350,p:24,c:34,f:12,
+      ingredients:[{item:'Skyr',amount:'220g'},{item:'Mixed nuts',amount:'25g'},{item:'Banana',amount:'1 small'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Protein Porridge + Eggs & Fruit',cals:540,p:34,c:54,f:14,
+      ingredients:[{item:'Rolled oats',amount:'80g'},{item:'Milk',amount:'250ml'},{item:'Greek yoghurt',amount:'80g'},{item:'Eggs (hard boiled)',amount:'2'},{item:'Banana',amount:'half'},{item:'Almond butter',amount:'1 tsp'}],
+      method:'Bring eggs to the boil in cold water, cook for 10 minutes, then cool and peel. Cook oats in milk over medium heat for 4-5 minutes, stirring frequently. Stir in Greek yoghurt and almond butter. Serve with sliced banana. Eat the boiled eggs on the side with salt and pepper.'},
+    lunch:{name:'Halloumi, Quinoa & Roasted Veg',cals:580,p:30,c:58,f:22,
+      ingredients:[{item:'Halloumi',amount:'90g'},{item:'Quinoa (cooked)',amount:'140g'},{item:'Peppers',amount:'100g'},{item:'Courgette',amount:'80g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Lemon juice',amount:'1 tbsp'}],
+      method:'Cook quinoa per packet instructions. Dice peppers and courgette, toss in olive oil and salt. Roast at 200°C for 20-25 mins or air fry at 200°C for 10 mins. Slice halloumi into 1cm pieces and cook in a dry pan over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 5-6 mins per side. Build the bowl — quinoa, roasted veg, halved tomatoes, halloumi. Dress with lemon juice.'},
+    dinner:{name:'Tofu Stir-Fry, Noodles & Edamame',cals:570,p:32,c:60,f:18,
+      ingredients:[{item:'Firm tofu',amount:'200g'},{item:'Rice noodles (cooked)',amount:'140g'},{item:'Edamame',amount:'80g'},{item:'Pak choi',amount:'60g'},{item:'Soy sauce',amount:'2 tbsp'},{item:'Sesame oil',amount:'2 tsp'},{item:'Ginger & garlic',amount:'1 tsp each'}],
+      method:'Press tofu between paper towels, cut into cubes. Pan-fry in oil over high heat for 3-4 minutes per side until golden and crispy. Air fryer option: 200°C for 12 mins. Soak noodles in boiling water for 5 minutes, drain. If edamame is frozen, microwave for 2 minutes. In a hot wok, stir-fry pak choi and edamame for 2-3 minutes. Add ginger and garlic, cook for 30 seconds. Pour in soy sauce and sesame oil. Return tofu, add noodles and toss everything together for 1 minute.'},
+    snack:{name:'Cottage Cheese, Fruit & Seeds',cals:360,p:24,c:30,f:13,
+      ingredients:[{item:'Cottage cheese',amount:'240g'},{item:'Mixed berries',amount:'100g'},{item:'Chia seeds',amount:'1 tsp'},{item:'Granola',amount:'25g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Big Tofu Scramble + Porridge',cals:540,p:34,c:52,f:16,
+      ingredients:[{item:'Firm tofu',amount:'160g'},{item:'Rolled oats',amount:'65g'},{item:'Milk',amount:'200ml'},{item:'Spinach',amount:'50g'},{item:'Turmeric & nutritional yeast',amount:'1 tsp each'},{item:'Banana',amount:'half'},{item:'Olive oil',amount:'1.5 tsp'}],
+      method:'Cook oats in milk over medium heat for 4-5 minutes, stirring regularly. Serve with banana. Press tofu between paper towels, crumble. Heat olive oil in a pan over medium-high heat. Spread tofu out and leave for 2 minutes to brown. Add turmeric and nutritional yeast, stir and cook for 3 more minutes. Add spinach and stir until wilted. Season. Air fryer option: crumbled tofu at 200°C for 10 mins, then toss with spices. Serve alongside the porridge.'},
+    lunch:{name:'Black Bean, Rice & Avocado Bowl',cals:570,p:28,c:64,f:18,
+      ingredients:[{item:'Black beans (drained)',amount:'180g'},{item:'Brown rice (cooked)',amount:'140g'},{item:'Avocado',amount:'60g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Lime juice',amount:'1 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Drain and rinse black beans. Warm in a pan for 2 minutes with a pinch of cumin and salt. Slice avocado and halve tomatoes. Build the bowl — rice, black beans, spinach, avocado and tomatoes. Squeeze lime juice and drizzle olive oil over the top.'},
+    dinner:{name:'Lentil Pasta Bake',cals:560,p:30,c:64,f:16,
+      ingredients:[{item:'Red lentil pasta (cooked)',amount:'150g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Courgette',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Mozzarella (light)',amount:'50g'},{item:'Garlic & herbs',amount:'to taste'},{item:'Olive oil',amount:'2 tsp'}],
+      method:'Preheat oven to 200°C. Cook pasta per packet instructions, drain. Dice courgette. Heat olive oil in a pan, add garlic and cook for 30 seconds. Add courgette and cook for 3-4 minutes. Add tinned tomatoes and herbs, simmer for 5 minutes. Add spinach and stir until wilted. Combine sauce with cooked pasta and transfer to an oven-safe dish. Tear mozzarella over the top. Bake for 20-25 minutes until golden and bubbling. Air fryer option: 180°C for 12-15 mins.'},
+    snack:{name:'Greek Yoghurt, Granola & Nuts',cals:360,p:22,c:34,f:14,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'230g'},{item:'Granola',amount:'30g'},{item:'Mixed nuts',amount:'20g'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Overnight Oats + Halloumi',cals:530,p:30,c:50,f:20,
+      ingredients:[{item:'Rolled oats',amount:'70g'},{item:'Greek yoghurt (0%)',amount:'130g'},{item:'Milk',amount:'80ml'},{item:'Halloumi',amount:'60g'},{item:'Berries',amount:'60g'},{item:'Chia seeds',amount:'1 tsp'}],
+      method:'The night before: combine oats, yoghurt, milk and chia seeds in a jar. Cover and refrigerate. In the morning, stir and top with berries. Slice halloumi and cook in a dry pan over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 5-6 mins per side. Serve halloumi alongside the oats.'},
+    lunch:{name:'Egg, Lentil & Veg Bowl',cals:560,p:30,c:58,f:18,
+      ingredients:[{item:'Eggs (hard boiled)',amount:'3'},{item:'Green lentils (cooked)',amount:'160g'},{item:'Sweet potato',amount:'130g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Cumin & paprika',amount:'1 tsp each'}],
+      method:'Boil eggs for 10 minutes, cool in cold water and peel. Dice sweet potato, toss in olive oil, cumin, paprika, salt and pepper. Roast at 200°C for 25 minutes or air fry at 200°C for 15 mins. Drain and rinse lentils. Warm in a pan with a little oil and season with cumin. Wilt spinach in. Build the bowl — lentils with spinach, roasted sweet potato. Halve the eggs and serve on top.'},
+    dinner:{name:'Paneer Tikka & Rice',cals:570,p:30,c:62,f:18,
+      ingredients:[{item:'Paneer',amount:'130g'},{item:'Brown rice (cooked)',amount:'140g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Onion',amount:'half'},{item:'Garlic & ginger',amount:'1 tsp each'},{item:'Tikka paste',amount:'1.5 tbsp'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Cut paneer into 2cm cubes. Mix with a little tikka paste and oil, then pan-fry over medium-high heat for 2-3 minutes per side until charred. Air fryer option: 200°C for 6-8 mins. Remove. Fry diced onion in oil for 3 minutes, add garlic and ginger for 1 minute, add remaining tikka paste and stir for 1 minute. Add tinned tomatoes, simmer for 10 minutes. Return paneer, stir in spinach until wilted. Season and serve over rice.'},
+    snack:{name:'Cottage Cheese & Banana Toast',cals:360,p:22,c:38,f:9,
+      ingredients:[{item:'Cottage cheese',amount:'220g'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Banana',amount:'half'},{item:'Honey',amount:'1 tsp'}],
+      method:'Toast the bread. Spread cottage cheese on the toast. Top with sliced banana and a drizzle of honey.'}
+  },
+  {
+    breakfast:{name:'Egg & Avocado Toast + Shake',cals:540,p:32,c:38,f:24,
+      ingredients:[{item:'Eggs (poached)',amount:'2'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'70g'},{item:'Feta',amount:'25g'},{item:'Spinach',amount:'50g'},{item:'Milk',amount:'200ml'},{item:'Banana',amount:'half'}],
+      method:'Toast the bread. Mash avocado with salt, pepper and lemon juice. Wilt spinach in a dry pan for 30 seconds. Bring a pan of water to a gentle simmer with a splash of vinegar. Create a swirl, slide eggs in and poach for 3-4 minutes. Spread avocado on toast, top with spinach, crumbled feta and poached eggs. Blend milk with banana for a simple shake.'},
+    lunch:{name:'Tofu, Chickpea & Quinoa Bowl',cals:570,p:30,c:60,f:18,
+      ingredients:[{item:'Firm tofu',amount:'150g'},{item:'Chickpeas (drained)',amount:'120g'},{item:'Quinoa (cooked)',amount:'130g'},{item:'Roasted peppers',amount:'80g'},{item:'Tahini',amount:'1 tbsp'},{item:'Lemon juice',amount:'1 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook quinoa per packet instructions. Press tofu, cut into cubes and pan-fry in oil over high heat for 3-4 minutes per side until golden. Air fryer option: 200°C for 10-12 mins. Drain and rinse chickpeas, toss in oil and cumin, roast at 200°C for 20 minutes or air fry at 200°C for 12 mins. Mix tahini with lemon juice and a splash of water for the dressing. Build the bowl — quinoa, roasted peppers, tofu, chickpeas. Drizzle tahini dressing over the top.'},
+    dinner:{name:'Veggie Chilli & Rice',cals:560,p:26,c:66,f:14,
+      ingredients:[{item:'Black beans (drained)',amount:'160g'},{item:'Kidney beans',amount:'80g'},{item:'Brown rice (cooked)',amount:'130g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Onion',amount:'half'},{item:'Garlic',amount:'2 cloves'},{item:'Chilli powder & cumin',amount:'1 tsp each'},{item:'Olive oil',amount:'1.5 tsp'}],
+      method:'Cook rice per packet instructions. Dice the onion. Heat olive oil in a pan over medium heat. Cook the onion for 3-4 minutes until soft. Add garlic, chilli powder and cumin, stir for 1 minute. Add tinned tomatoes, black beans and kidney beans. Stir well, bring to a simmer. Cook for 20-25 minutes, stirring occasionally, until the sauce has thickened. Season well. Serve over rice.'},
+    snack:{name:'Skyr, Seeds & Fruit',cals:360,p:24,c:34,f:12,
+      ingredients:[{item:'Skyr',amount:'230g'},{item:'Mixed seeds',amount:'20g'},{item:'Apple',amount:'1 medium'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  }
+],
+
+// ═══════════════════════════════════════
+// VEGGIE — 2400 kcal
+// ═══════════════════════════════════════
+veggie_2400: [
+  {
+    breakfast:{name:'Loaded Veggie Breakfast',cals:600,p:36,c:46,f:28,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Mushrooms',amount:'80g'},{item:'Feta',amount:'30g'},{item:'Olive oil',amount:'2 tsp'}],
+      method:'Toast the bread. Mash avocado with salt, pepper and lemon juice. Slice mushrooms. Heat oil in a pan over medium heat, cook mushrooms for 3-4 minutes until golden. Air fryer option: 190°C for 8 mins. Add spinach and stir until wilted. Remove. In a clean pan, scramble eggs over medium-low heat until just set. Spread avocado on toast, top with mushroom and spinach mixture. Add eggs, crumble feta over the top.'},
+    lunch:{name:'Halloumi, Lentil & Brown Rice',cals:640,p:34,c:70,f:20,
+      ingredients:[{item:'Halloumi',amount:'100g'},{item:'Green lentils (cooked)',amount:'160g'},{item:'Brown rice (cooked)',amount:'140g'},{item:'Roasted peppers',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Lemon & cumin',amount:'to taste'}],
+      method:'Cook rice per packet instructions. Drain and rinse lentils. Warm in a pan with olive oil and cumin for 2 minutes, wilt spinach in. Slice halloumi into 1cm pieces and cook in a dry pan over medium-high heat for 2-3 minutes per side until golden with char marks. Air fryer option: 200°C for 5-6 mins per side. Build the bowl — rice, spiced lentils and spinach, roasted peppers, halloumi slices. Squeeze lemon juice over everything.'},
+    dinner:{name:'Paneer Curry, Rice & Naan',cals:620,p:32,c:72,f:18,
+      ingredients:[{item:'Paneer',amount:'140g'},{item:'Brown rice (cooked)',amount:'140g'},{item:'Mini wholegrain naan',amount:'1'},{item:'Spinach',amount:'60g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Curry paste',amount:'1.5 tbsp'},{item:'Light coconut milk',amount:'80ml'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Warm the naan in a dry pan or oven at 180°C for 4-5 minutes. Cut paneer into 2cm cubes and pan-fry in oil for 2-3 minutes per side until golden. Air fryer option: 200°C for 6-8 mins. Remove. Add curry paste to the pan, stir for 1 minute. Pour in tinned tomatoes and coconut milk, simmer for 8 minutes. Return paneer, stir in spinach until wilted. Season and serve over rice with warm naan.'},
+    snack:{name:'Protein Yoghurt, Nuts & Banana',cals:380,p:26,c:36,f:14,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'250g'},{item:'Mixed nuts',amount:'28g'},{item:'Banana',amount:'1 small'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Big Protein Porridge',cals:580,p:34,c:60,f:14,
+      ingredients:[{item:'Rolled oats',amount:'90g'},{item:'Milk',amount:'280ml'},{item:'Greek yoghurt',amount:'100g'},{item:'Eggs (hard boiled)',amount:'2'},{item:'Banana',amount:'half'},{item:'Almond butter',amount:'1 tsp'}],
+      method:'Bring eggs to the boil in cold water, cook for 10 minutes, cool and peel. Cook oats in milk over medium heat for 5-6 minutes, stirring regularly until thick and creamy. Stir in Greek yoghurt and almond butter. Serve with sliced banana. Eat the boiled eggs on the side with salt and pepper.'},
+    lunch:{name:'Tofu, Chickpea & Rice Bowl',cals:630,p:34,c:68,f:18,
+      ingredients:[{item:'Firm tofu',amount:'200g'},{item:'Chickpeas (drained)',amount:'150g'},{item:'Brown rice (cooked)',amount:'140g'},{item:'Avocado',amount:'50g'},{item:'Spinach',amount:'60g'},{item:'Tahini',amount:'1.5 tbsp'},{item:'Lemon juice',amount:'1 tbsp'}],
+      method:'Cook rice per packet instructions. Press tofu, cut into cubes. Pan-fry in oil over high heat for 3-4 minutes per side until golden. Air fryer option: 200°C for 12 mins. Drain and rinse chickpeas, toss in oil and cumin, roast at 200°C for 20 minutes or air fry at 200°C for 12-15 mins. Mix tahini with lemon juice and a splash of water. Slice avocado. Build the bowl — rice, spinach, tofu, chickpeas, avocado. Drizzle with tahini dressing.'},
+    dinner:{name:'Lentil Bolognese & Pasta',cals:620,p:30,c:72,f:16,
+      ingredients:[{item:'Red lentils (dried)',amount:'100g'},{item:'Wholewheat pasta (cooked)',amount:'160g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Carrot',amount:'60g'},{item:'Onion',amount:'half'},{item:'Garlic',amount:'2 cloves'},{item:'Italian herbs',amount:'1 tsp'},{item:'Parmesan',amount:'20g'},{item:'Olive oil',amount:'2 tsp'}],
+      method:'Cook pasta per packet instructions. Finely dice carrot and onion. Heat olive oil over medium heat, cook onion for 3 minutes, add carrot and cook for 2 minutes. Add minced garlic and herbs, stir for 30 seconds. Add dry lentils and tinned tomatoes, pour in 150ml water. Stir and bring to a simmer. Cook for 25 minutes until lentils are completely soft and sauce is thick, stirring occasionally. Season well. Toss with pasta and top with grated parmesan.'},
+    snack:{name:'Cottage Cheese, Fruit & Toast',cals:400,p:24,c:40,f:12,
+      ingredients:[{item:'Cottage cheese',amount:'240g'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Mixed berries',amount:'80g'},{item:'Honey',amount:'1 tsp'},{item:'Mixed seeds',amount:'10g'}],
+      method:'Toast the bread. Spread cottage cheese on toast, top with berries and seeds. Drizzle honey over the top.'}
+  },
+  {
+    breakfast:{name:'Tofu Scramble + Big Porridge',cals:580,p:34,c:58,f:18,
+      ingredients:[{item:'Firm tofu',amount:'170g'},{item:'Rolled oats',amount:'70g'},{item:'Milk',amount:'220ml'},{item:'Spinach',amount:'60g'},{item:'Turmeric & nutritional yeast',amount:'1 tsp each'},{item:'Banana',amount:'half'},{item:'Berries',amount:'60g'},{item:'Olive oil',amount:'2 tsp'}],
+      method:'Cook oats in milk over medium heat for 4-5 minutes, stirring regularly. Serve with banana and berries. Press tofu between paper towels, then crumble. Heat olive oil in a pan over medium-high heat. Add tofu, spread and leave for 2 minutes to brown. Add turmeric and nutritional yeast, stir and cook for 3 more minutes. Add spinach and stir until wilted. Season. Air fryer option: crumbled tofu at 200°C for 10 mins. Serve alongside the porridge.'},
+    lunch:{name:'Halloumi & Quinoa Power Bowl',cals:630,p:32,c:64,f:24,
+      ingredients:[{item:'Halloumi',amount:'100g'},{item:'Quinoa (cooked)',amount:'150g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Cucumber',amount:'60g'},{item:'Avocado',amount:'50g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Lemon juice',amount:'1 tbsp'}],
+      method:'Cook quinoa per packet instructions. Slice halloumi and cook in a dry pan over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 5-6 mins per side. Halve the tomatoes, dice cucumber and avocado. Build the bowl — quinoa, spinach, tomatoes, cucumber, avocado, halloumi. Dress with olive oil and lemon juice.'},
+    dinner:{name:'Black Bean & Veggie Chilli + Rice',cals:610,p:28,c:72,f:16,
+      ingredients:[{item:'Black beans (drained)',amount:'180g'},{item:'Kidney beans',amount:'100g'},{item:'Brown rice (cooked)',amount:'140g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Peppers',amount:'80g'},{item:'Onion',amount:'half'},{item:'Chilli powder & cumin',amount:'1 tsp each'},{item:'Olive oil',amount:'2 tsp'}],
+      method:'Cook rice per packet instructions. Dice onion and pepper. Heat olive oil in a pan over medium heat. Cook onion for 3-4 minutes until soft. Add peppers and cook for 2 minutes. Add garlic, chilli powder and cumin, stir for 1 minute. Add tinned tomatoes, black beans and kidney beans. Bring to a simmer and cook for 20-25 minutes, stirring occasionally, until thick. Season well. Serve over rice.'},
+    snack:{name:'Greek Yoghurt, Granola & Nuts',cals:400,p:24,c:38,f:16,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'250g'},{item:'Granola',amount:'35g'},{item:'Mixed nuts',amount:'25g'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Egg & Avocado Loaded Toast',cals:580,p:30,c:44,f:28,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'80g'},{item:'Feta',amount:'30g'},{item:'Spinach',amount:'50g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Olive oil',amount:'2 tsp'}],
+      method:'Toast the bread. Mash avocado with salt, pepper and lemon juice. Wilt spinach in a dry pan for 30 seconds. Halve tomatoes. Heat olive oil in a non-stick pan, add tomatoes and cook for 1 minute. Pour in whisked eggs and scramble over medium-low heat until just set. Spread avocado on toast, top with spinach, scrambled eggs and crumbled feta.'},
+    lunch:{name:'Paneer, Black Bean & Rice Bowl',cals:630,p:34,c:66,f:18,
+      ingredients:[{item:'Paneer',amount:'130g'},{item:'Black beans (drained)',amount:'150g'},{item:'Brown rice (cooked)',amount:'140g'},{item:'Salsa',amount:'3 tbsp'},{item:'Avocado',amount:'50g'},{item:'Lime juice',amount:'1 tbsp'},{item:'Olive oil',amount:'1 tsp'}],
+      method:'Cook rice per packet instructions. Cut paneer into cubes and pan-fry in oil over medium-high heat for 2-3 minutes per side until golden on all sides. Air fryer option: 200°C for 6-8 mins. Drain and rinse black beans, warm in a pan for 2 minutes with a pinch of cumin. Slice avocado. Build the bowl — rice, black beans, paneer, avocado and salsa. Squeeze lime juice over the top.'},
+    dinner:{name:'Chickpea, Lentil & Pasta Bake',cals:610,p:28,c:70,f:18,
+      ingredients:[{item:'Chickpeas (drained)',amount:'150g'},{item:'Red lentils (dried)',amount:'60g'},{item:'Wholewheat pasta (cooked)',amount:'130g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Spinach',amount:'60g'},{item:'Mozzarella (light)',amount:'50g'},{item:'Garlic & herbs',amount:'to taste'},{item:'Olive oil',amount:'2 tsp'}],
+      method:'Preheat oven to 200°C. Cook pasta per packet instructions, drain. Cook lentils in a pan with tinned tomatoes and 100ml water for 20 minutes until soft. Add garlic, herbs, chickpeas and spinach. Stir until spinach wilts. Season well. Combine with pasta in an oven-safe dish. Tear mozzarella over the top. Bake for 20-25 minutes until golden and bubbling. Air fryer option: 180°C for 12-15 mins.'},
+    snack:{name:'Skyr, Seeds & Fruit',cals:400,p:26,c:36,f:14,
+      ingredients:[{item:'Skyr',amount:'240g'},{item:'Mixed seeds',amount:'20g'},{item:'Banana',amount:'1 small'},{item:'Granola',amount:'25g'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Overnight Oats + Halloumi',cals:580,p:30,c:58,f:22,
+      ingredients:[{item:'Rolled oats',amount:'75g'},{item:'Greek yoghurt (0%)',amount:'150g'},{item:'Milk',amount:'100ml'},{item:'Halloumi',amount:'70g'},{item:'Berries',amount:'80g'},{item:'Chia seeds',amount:'1 tsp'},{item:'Honey',amount:'1 tsp'}],
+      method:'The night before: combine oats, yoghurt, milk and chia seeds in a jar. Stir, cover and refrigerate. In the morning, stir and top with berries and honey. Slice halloumi and cook in a dry pan over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 5-6 mins per side. Serve halloumi alongside the oats.'},
+    lunch:{name:'Tofu, Lentil & Sweet Potato Bowl',cals:630,p:32,c:66,f:20,
+      ingredients:[{item:'Firm tofu',amount:'180g'},{item:'Green lentils (cooked)',amount:'140g'},{item:'Sweet potato',amount:'160g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Tahini',amount:'1 tbsp'},{item:'Lemon juice',amount:'1 tbsp'}],
+      method:'Dice sweet potato, toss in olive oil, cumin, salt and pepper. Roast at 200°C for 25 minutes or air fry at 200°C for 15 mins. Press tofu, cut into cubes and pan-fry in oil over high heat for 3-4 minutes per side until golden. Air fryer option: 200°C for 12 mins. Drain and rinse lentils, warm in a pan with olive oil and cumin. Wilt spinach in. Mix tahini with lemon juice and a splash of water. Build the bowl — lentils and spinach, sweet potato, tofu. Drizzle with tahini dressing.'},
+    dinner:{name:'Veggie Tikka Masala & Rice',cals:610,p:28,c:68,f:18,
+      ingredients:[{item:'Paneer',amount:'120g'},{item:'Chickpeas (drained)',amount:'120g'},{item:'Brown rice (cooked)',amount:'140g'},{item:'Tikka paste',amount:'2 tbsp'},{item:'Light coconut milk',amount:'100ml'},{item:'Spinach',amount:'60g'},{item:'Onion',amount:'half'},{item:'Olive oil',amount:'1.5 tsp'}],
+      method:'Cook rice per packet instructions. Cut paneer into cubes, toss in a little tikka paste and pan-fry in oil for 2-3 minutes per side until golden. Air fryer option: 200°C for 6-8 mins. Remove. Dice onion and cook in oil for 3-4 minutes until soft. Add remaining tikka paste and stir for 1 minute. Pour in coconut milk, add chickpeas and simmer for 10 minutes until sauce has thickened. Return paneer and stir in spinach until wilted. Season and serve over rice.'},
+    snack:{name:'Protein Cottage Cheese Bowl',cals:400,p:26,c:38,f:12,
+      ingredients:[{item:'Cottage cheese',amount:'250g'},{item:'Banana',amount:'1 small'},{item:'Granola',amount:'30g'},{item:'Honey',amount:'1 tsp'},{item:'Chia seeds',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  }
+],
+
+// ═══════════════════════════════════════
+// VEGGIE — 2600 kcal
+// ═══════════════════════════════════════
+veggie_2600: [
+  {
+    breakfast:{name:'Big Loaded Breakfast',cals:650,p:38,c:52,f:28,
+      ingredients:[{item:'Eggs',amount:'4'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Mushrooms',amount:'80g'},{item:'Feta',amount:'35g'},{item:'Olive oil',amount:'2 tsp'}],
+      method:'Toast the bread. Mash avocado with salt, pepper and lemon juice. Slice mushrooms and cook in oil over medium heat for 3-4 minutes until golden. Air fryer option: 190°C for 8 mins. Add spinach and wilt. Remove. In a non-stick pan, scramble eggs in olive oil over medium-low heat until just set. Spread avocado on toast, top with mushroom and spinach mixture, pile eggs on top, crumble feta over everything.'},
+    lunch:{name:'Halloumi, Chickpea & Brown Rice Bowl',cals:690,p:36,c:76,f:22,
+      ingredients:[{item:'Halloumi',amount:'110g'},{item:'Chickpeas (drained)',amount:'160g'},{item:'Brown rice (cooked)',amount:'160g'},{item:'Roasted peppers',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Lemon & cumin',amount:'to taste'}],
+      method:'Cook rice per packet instructions. Drain and rinse chickpeas, toss in olive oil and cumin. Roast at 200°C for 20 minutes or air fry at 200°C for 12 mins until crispy. Slice halloumi and cook in a dry pan over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 5-6 mins per side. Drain and rinse lentils if needed. Build the bowl — rice, spinach, roasted peppers, chickpeas and halloumi. Squeeze lemon juice over everything.'},
+    dinner:{name:'Paneer Curry, Rice & Naan',cals:680,p:34,c:76,f:20,
+      ingredients:[{item:'Paneer',amount:'150g'},{item:'Brown rice (cooked)',amount:'150g'},{item:'Mini wholegrain naan',amount:'1'},{item:'Spinach',amount:'60g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Curry paste',amount:'2 tbsp'},{item:'Light coconut milk',amount:'80ml'},{item:'Olive oil',amount:'1.5 tsp'}],
+      method:'Cook rice per packet instructions. Warm naan in a dry pan or oven at 180°C for 4-5 minutes. Cut paneer into 2cm cubes and pan-fry in oil over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 6-8 mins. Remove. Add curry paste to the pan and stir for 1 minute. Pour in tinned tomatoes and coconut milk, bring to a simmer. Cook for 8 minutes until slightly thickened. Return paneer, stir in spinach until wilted. Season. Serve over rice with warm naan.'},
+    snack:{name:'Big Protein Yoghurt Bowl',cals:420,p:28,c:40,f:14,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'280g'},{item:'Mixed nuts',amount:'30g'},{item:'Banana',amount:'1 small'},{item:'Granola',amount:'25g'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Big Porridge + Halloumi',cals:630,p:34,c:66,f:18,
+      ingredients:[{item:'Rolled oats',amount:'90g'},{item:'Milk',amount:'280ml'},{item:'Greek yoghurt',amount:'100g'},{item:'Halloumi',amount:'60g'},{item:'Banana',amount:'half'},{item:'Almond butter',amount:'1 tsp'}],
+      method:'Cook oats in milk over medium heat for 5-6 minutes, stirring frequently until thick and creamy. Stir in Greek yoghurt and almond butter. Serve with banana. Slice halloumi and cook in a dry pan over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 5-6 mins per side. Serve halloumi alongside the porridge.'},
+    lunch:{name:'Tofu, Lentil & Quinoa Bowl',cals:680,p:36,c:72,f:20,
+      ingredients:[{item:'Firm tofu',amount:'210g'},{item:'Green lentils (cooked)',amount:'150g'},{item:'Quinoa (cooked)',amount:'140g'},{item:'Avocado',amount:'60g'},{item:'Spinach',amount:'60g'},{item:'Tahini',amount:'1.5 tbsp'},{item:'Lemon juice',amount:'1 tbsp'}],
+      method:'Cook quinoa per packet instructions. Press tofu, cut into cubes. Pan-fry in oil over high heat for 3-4 minutes per side until golden and crispy. Air fryer option: 200°C for 12 mins. Drain and rinse lentils. Mix tahini with lemon juice and a splash of water. Slice avocado. Build the bowl — quinoa, lentils, spinach, tofu, avocado. Drizzle tahini dressing over everything.'},
+    dinner:{name:'Black Bean Chilli, Rice & Nachos',cals:670,p:30,c:78,f:20,
+      ingredients:[{item:'Black beans (drained)',amount:'200g'},{item:'Kidney beans',amount:'100g'},{item:'Brown rice (cooked)',amount:'150g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Peppers',amount:'80g'},{item:'Onion',amount:'half'},{item:'Chilli powder & cumin',amount:'1 tsp each'},{item:'Baked tortilla chips',amount:'20g'},{item:'Olive oil',amount:'2 tsp'}],
+      method:'Cook rice per packet instructions. Dice onion and pepper. Heat oil in a pan over medium heat. Cook onion for 3-4 minutes. Add peppers and cook for 2 minutes. Add chilli powder and cumin, stir for 1 minute. Add tinned tomatoes, black beans and kidney beans. Simmer for 20-25 minutes until thick. Season well. Serve over rice with a small handful of baked tortilla chips on the side for crunch.'},
+    snack:{name:'Cottage Cheese, Toast & Fruit',cals:440,p:26,c:46,f:14,
+      ingredients:[{item:'Cottage cheese',amount:'260g'},{item:'Wholegrain toast',amount:'1 slice'},{item:'Banana',amount:'1 small'},{item:'Mixed seeds',amount:'15g'},{item:'Honey',amount:'1 tsp'}],
+      method:'Toast the bread. Spread cottage cheese on toast and top with seeds. Serve banana and drizzle honey over the cottage cheese.'}
+  },
+  {
+    breakfast:{name:'Tofu Scramble + Porridge + Fruit',cals:640,p:36,c:62,f:20,
+      ingredients:[{item:'Firm tofu',amount:'180g'},{item:'Rolled oats',amount:'70g'},{item:'Milk',amount:'220ml'},{item:'Spinach',amount:'60g'},{item:'Turmeric & nutritional yeast',amount:'1 tsp each'},{item:'Banana',amount:'half'},{item:'Berries',amount:'60g'},{item:'Olive oil',amount:'2 tsp'}],
+      method:'Cook oats in milk over medium heat for 4-5 minutes, stirring regularly. Serve with banana and berries. Press tofu, crumble. Heat oil over medium-high heat, add tofu and leave for 2 minutes to brown. Add turmeric and nutritional yeast, stir and cook for 3 more minutes. Add spinach and wilt. Season. Air fryer option: crumbled tofu at 200°C for 10 mins. Serve alongside the porridge.'},
+    lunch:{name:'Paneer, Brown Rice & Full Veg',cals:680,p:34,c:72,f:20,
+      ingredients:[{item:'Paneer',amount:'140g'},{item:'Brown rice (cooked)',amount:'160g'},{item:'Broccoli',amount:'100g'},{item:'Courgette',amount:'80g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Cumin & coriander',amount:'1 tsp each'}],
+      method:'Cook rice per packet instructions. Cut paneer into cubes and pan-fry in oil for 2-3 minutes per side until golden. Air fryer option: 200°C for 6-8 mins. Dice courgette and toss broccoli and courgette in olive oil and seasoning. Roast at 200°C for 20 minutes or air fry at 190-200°C for 10 mins. Build the bowl — rice, roasted veg, halved tomatoes and paneer.'},
+    dinner:{name:'Lentil Pasta Bake + Salad',cals:650,p:30,c:74,f:20,
+      ingredients:[{item:'Red lentil pasta (cooked)',amount:'170g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Courgette',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Mozzarella (light)',amount:'60g'},{item:'Garlic & herbs',amount:'to taste'},{item:'Mixed salad',amount:'60g'},{item:'Olive oil',amount:'2 tsp'}],
+      method:'Preheat oven to 200°C. Cook pasta per packet instructions, drain. Dice courgette and cook in oil with garlic for 3-4 minutes. Add tinned tomatoes and herbs, simmer for 5 minutes. Add spinach and wilt. Combine sauce with pasta, transfer to an oven-safe dish. Tear mozzarella over the top. Bake for 20-25 minutes until golden and bubbling. Air fryer option: 180°C for 12-15 mins. Serve with a simple dressed salad on the side.'},
+    snack:{name:'Big Skyr Bowl',cals:440,p:28,c:44,f:14,
+      ingredients:[{item:'Skyr',amount:'260g'},{item:'Granola',amount:'35g'},{item:'Mixed nuts',amount:'25g'},{item:'Banana',amount:'half'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Full Loaded Toast + Shake',cals:640,p:36,c:52,f:26,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'80g'},{item:'Feta',amount:'30g'},{item:'Spinach',amount:'60g'},{item:'Milk',amount:'250ml'},{item:'Banana',amount:'half'}],
+      method:'Toast the bread. Mash avocado with salt and lemon. Wilt spinach in a dry pan for 30 seconds. Whisk eggs and scramble in olive oil over medium-low heat until just set. Spread avocado on toast, top with spinach, eggs and crumbled feta. Blend milk with banana for a quick shake on the side.'},
+    lunch:{name:'Halloumi, Quinoa & Lentil Bowl',cals:680,p:32,c:70,f:26,
+      ingredients:[{item:'Halloumi',amount:'110g'},{item:'Quinoa (cooked)',amount:'150g'},{item:'Green lentils (cooked)',amount:'130g'},{item:'Cherry tomatoes',amount:'80g'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'2 tsp'},{item:'Lemon & cumin',amount:'to taste'}],
+      method:'Cook quinoa per packet instructions. Drain and rinse lentils, warm in a pan with olive oil and cumin for 2 minutes, wilt spinach in. Slice halloumi and cook in a dry pan over medium-high heat for 2-3 minutes per side until golden. Air fryer option: 200°C for 5-6 mins per side. Halve the tomatoes. Build the bowl — quinoa, spiced lentils and spinach, tomatoes, halloumi. Squeeze lemon juice over the top.'},
+    dinner:{name:'Veggie Tikka Masala, Rice & Naan',cals:660,p:30,c:74,f:20,
+      ingredients:[{item:'Paneer',amount:'130g'},{item:'Chickpeas (drained)',amount:'130g'},{item:'Brown rice (cooked)',amount:'140g'},{item:'Mini wholegrain naan',amount:'1'},{item:'Tikka paste',amount:'2 tbsp'},{item:'Light coconut milk',amount:'100ml'},{item:'Spinach',amount:'60g'},{item:'Olive oil',amount:'1.5 tsp'}],
+      method:'Cook rice per packet instructions. Warm naan in a dry pan or oven for 4-5 minutes. Cut paneer into cubes, toss with a little tikka paste and pan-fry in oil for 2-3 minutes per side until golden. Air fryer option: 200°C for 6-8 mins. Remove. Add remaining tikka paste to the pan, stir for 1 minute. Pour in coconut milk, add chickpeas and simmer for 10-12 minutes until sauce has thickened. Return paneer and stir in spinach until wilted. Season and serve over rice with warm naan.'},
+    snack:{name:'Protein Cottage Cheese & Fruit',cals:440,p:28,c:44,f:14,
+      ingredients:[{item:'Cottage cheese',amount:'260g'},{item:'Banana',amount:'1 small'},{item:'Granola',amount:'30g'},{item:'Mixed seeds',amount:'15g'},{item:'Honey',amount:'1 tsp'}],
+      method:'No cooking needed.'}
+  },
+  {
+    breakfast:{name:'Egg & Avocado Feast',cals:640,p:34,c:46,f:30,
+      ingredients:[{item:'Eggs',amount:'3'},{item:'Egg whites',amount:'2'},{item:'Wholegrain toast',amount:'2 slices'},{item:'Avocado',amount:'90g'},{item:'Feta',amount:'30g'},{item:'Cherry tomatoes',amount:'60g'},{item:'Olive oil',amount:'2 tsp'}],
+      method:'Toast the bread. Mash avocado with salt, pepper and lemon juice. Halve the cherry tomatoes. Whisk eggs and egg whites together and season. Heat oil in a non-stick pan over medium heat. Add tomatoes and cook for 1 minute. Pour in eggs and scramble gently until just set. Spread avocado on toast, pile eggs and tomatoes on top, crumble feta over everything.'},
+    lunch:{name:'Tofu, Sweet Potato & Bean Bowl',cals:680,p:32,c:74,f:20,
+      ingredients:[{item:'Firm tofu',amount:'200g'},{item:'Sweet potato',amount:'170g'},{item:'Black beans (drained)',amount:'130g'},{item:'Spinach',amount:'60g'},{item:'Tahini',amount:'1.5 tbsp'},{item:'Lime juice',amount:'1 tbsp'},{item:'Olive oil',amount:'2 tsp'}],
+      method:'Dice sweet potato, toss in olive oil, cumin, salt and pepper. Roast at 200°C for 25 minutes or air fry at 200°C for 15 mins. Press tofu, cut into cubes, pan-fry in oil over high heat for 3-4 minutes per side until golden. Air fryer option: 200°C for 12 mins. Drain and rinse black beans, warm in a pan for 2 minutes. Mix tahini with lime juice and a splash of water. Build the bowl — spinach, black beans, sweet potato, tofu. Drizzle with tahini dressing.'},
+    dinner:{name:'Big Veggie Chilli & Rice',cals:650,p:28,c:76,f:20,
+      ingredients:[{item:'Chickpeas (drained)',amount:'160g'},{item:'Kidney beans',amount:'120g'},{item:'Brown rice (cooked)',amount:'150g'},{item:'Tinned tomatoes',amount:'200g'},{item:'Peppers',amount:'100g'},{item:'Onion',amount:'half'},{item:'Garlic',amount:'2 cloves'},{item:'Chilli powder & cumin',amount:'1 tsp each'},{item:'Cheddar (reduced fat)',amount:'30g'},{item:'Olive oil',amount:'2 tsp'}],
+      method:'Cook rice per packet instructions. Dice onion and peppers. Heat oil in a pan over medium heat. Cook onion for 3-4 minutes, add peppers and cook for 2 minutes. Add garlic, chilli powder and cumin, stir for 1 minute. Add tinned tomatoes, chickpeas and kidney beans. Simmer for 20-25 minutes, stirring occasionally, until thick. Season well. Serve over rice, grate cheddar over the top.'},
+    snack:{name:'Big Protein Smoothie Bowl',cals:440,p:28,c:46,f:14,
+      ingredients:[{item:'Greek yoghurt (0%)',amount:'260g'},{item:'Mixed nuts',amount:'28g'},{item:'Banana',amount:'1 small'},{item:'Granola',amount:'30g'},{item:'Mixed seeds',amount:'10g'}],
+      method:'No cooking needed.'}
+  }
+]
+
+};
+
+
+// ─── MACRO TARGETS ────────────────────────────────────────────
+const MACROS = {
+  1400: {p:140,c:105,f:47}, 1600: {p:160,c:120,f:53},
+  1800: {p:180,c:135,f:60}, 2000: {p:200,c:150,f:67},
+  2200: {p:210,c:165,f:73}, 2400: {p:220,c:180,f:80},
+  2600: {p:240,c:195,f:87}
+};
+const VEGGIE_MACROS = {
+  1400: {p:105,c:140,f:47}, 1600: {p:120,c:160,f:53},
+  1800: {p:135,c:180,f:60}, 2000: {p:150,c:200,f:67},
+  2200: {p:160,c:220,f:73}, 2400: {p:170,c:240,f:80},
+  2600: {p:175,c:260,f:87}
+};
+
+function generatePlan() {
+  const {cals, diet} = sel;
+  const key = `${diet}_${cals}`;
+  const plan = PLANS[key];
+  if (!plan) { alert('Plan not found.'); return; }
+
+  const macros = diet === 'veggie' ? VEGGIE_MACROS[parseInt(cals)] : MACROS[parseInt(cals)];
+  const dietLabel = diet === 'meat' ? 'Meat & Fish' : 'Vegetarian';
+
+  document.getElementById('planSubtitle').textContent = `${cals} kcal/day · ${dietLabel} · 40/30/30 macros`;
+
+  const metaEl = document.getElementById('planMeta');
+  metaEl.innerHTML = [cals + ' kcal', dietLabel, 'High Protein', '5 Days'].map(t => `<span class="meta-tag">${t}</span>`).join('');
+
+  document.getElementById('macroBars').innerHTML = `
+    <div class="macro-item"><div class="macro-val">${macros.p}g</div><div class="macro-lbl">Protein</div></div>
+    <div class="macro-item"><div class="macro-val">${macros.c}g</div><div class="macro-lbl">Carbs</div></div>
+    <div class="macro-item"><div class="macro-val">${macros.f}g</div><div class="macro-lbl">Fat</div></div>
+    <div class="macro-item"><div class="macro-val">${cals}</div><div class="macro-lbl">Calories</div></div>
+  `;
+
+  const tabsEl = document.getElementById('dayTabs');
+  const plansEl = document.getElementById('dayPlans');
+  tabsEl.innerHTML = ''; plansEl.innerHTML = '';
+
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  plan.forEach((day, i) => {
+    const tab = document.createElement('button');
+    tab.className = 'day-tab' + (i === 0 ? ' active' : '');
+    tab.textContent = days[i];
+    tab.onclick = () => switchDay(i);
+    tabsEl.appendChild(tab);
+
+    const dp = document.createElement('div');
+    dp.className = 'day-plan' + (i === 0 ? ' active' : '');
+    dp.id = `day${i}`;
+    dp.innerHTML = buildDayHTML(day);
+    plansEl.appendChild(dp);
+  });
+
+  document.getElementById('selectorScreen').style.display = 'none';
+  const ps = document.getElementById('planScreen');
+  ps.style.display = 'block';
+  ps.classList.add('active');
+
+  window.scrollTo(0, 0);
+  setTimeout(reportHeight, 200);
+}
+
+function buildDayHTML(day) {
+  const meals = [
+    {key:'breakfast', label:'Breakfast', emoji:'🌅'},
+    {key:'lunch', label:'Lunch', emoji:'☀️'},
+    {key:'dinner', label:'Dinner', emoji:'🌙'},
+    {key:'snack', label:'Snack', emoji:'🍎'}
+  ];
+  return meals.map(m => {
+    const meal = day[m.key];
+    const isSnack = m.key === 'snack';
+    const cookSection = isSnack ? '' : `<div class="cook-note"><div class="cook-heading">How to make it</div>${meal.method}</div>`;
+    return `<div class="meal-card">
+      <div class="meal-hdr">
+        <span class="meal-type">${m.emoji} ${m.label}</span>
+        <span class="meal-cals">${meal.cals} kcal</span>
+      </div>
+      <div class="meal-body">
+        <div class="meal-name">${meal.name}</div>
+        <div class="meal-macros">
+          <div class="meal-macro">Protein <span>${meal.p}g</span></div>
+          <div class="meal-macro">Carbs <span>${meal.c}g</span></div>
+          <div class="meal-macro">Fat <span>${meal.f}g</span></div>
+        </div>
+        <ul class="ingredients">
+          ${meal.ingredients.map(ing => `<li><strong>${ing.item}</strong> — ${ing.amount}</li>`).join('')}
+        </ul>
+        ${cookSection}
+      </div>
+    </div>`;
+  }).join('');
+}
+function switchDay(i) {
+  document.querySelectorAll('.day-tab').forEach((t, j) => t.classList.toggle('active', j === i));
+  document.querySelectorAll('.day-plan').forEach((d, j) => d.classList.toggle('active', j === i));
+  window.scrollTo(0, 0);
+  setTimeout(reportHeight, 100);
+}
+
+function resetPlan() {
+  document.getElementById('planScreen').style.display = 'none';
+  document.getElementById('planScreen').classList.remove('active');
+  document.getElementById('selectorScreen').style.display = 'block';
+  window.scrollTo(0, 0);
+  setTimeout(reportHeight, 200);
+}
+
+function reportHeight() {
+  const h = document.documentElement.scrollHeight;
+  window.parent.postMessage({ type: 'setHeight', height: h }, '*');
+}
+setTimeout(reportHeight, 300);
+new MutationObserver(reportHeight).observe(document.body, { childList: true, subtree: true });
+window.addEventListener('resize', reportHeight);
+</script>
+</body>
+</html>
